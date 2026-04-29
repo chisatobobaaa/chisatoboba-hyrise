@@ -627,6 +627,7 @@ async function refreshOrders() {
   await loadOrdersFromSupabase();
   renderOrderTable(_cachedOrders);
   currentOrders = _cachedOrders;
+  showToast('✅ Pesanan diperbarui!');
 }
 
 function filterOrders(q) {
