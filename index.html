@@ -219,7 +219,7 @@ h1{font-family:'Cinzel',serif;font-size:clamp(2rem,5vw,4rem);font-weight:900;
   <h1>Hyrise SMP Store</h1>
   <p class="hero-sub">Beli rank, key, dan item — langsung dikirim otomatis ke akunmu!</p>
   <div class="ip-pill">
-    play.hyrisesmp.id
+    <span id="serverIPDisplay">play.hyrisesmp.id</span>
     <button class="copy-ip" onclick="copyIP()">Salin</button>
   </div>
 </div>
@@ -540,9 +540,20 @@ const EMAIL_CONFIG = {
 
 let cart = [];
 let selectedPM = 'QRIS';
+let _serverIP = 'play.hyrisesmp.id';
 
 const fmt = n => 'Rp ' + n.toLocaleString('id-ID');
 const genOrderId = () => 'HRS-' + Date.now().toString(36).toUpperCase();
+
+// Load settings dari Supabase
+async function loadSettings() {
+  const { data } = await _sb.from('settings').select('*').eq('key', 'server_ip').single();
+  if (data && data.value) {
+    _serverIP = data.value;
+    document.getElementById('serverIPDisplay').textContent = _serverIP;
+  }
+}
+loadSettings();
 
 function showTab(tab, el) {
   document.querySelectorAll('.grid').forEach(g => g.classList.remove('on'));
@@ -633,7 +644,7 @@ async function processPayment() {
     items: items.map(i => i.name),
     item_details: items,
     total, payment: selectedPM,
-    status: 'processing',
+    status: 'pending',
     date: now.toISOString(),
     date_str: now.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})
   };
@@ -663,24 +674,18 @@ async function showSuccess(order) {
 
   const statusEl = document.getElementById('deliveryStatus');
   const steps = [
-    'Memverifikasi pembayaran...',
-    'Terhubung ke server Minecraft...',
-    'Menjalankan perintah pengiriman...',
-    '✅ Item berhasil dikirim ke ' + order.username + '!',
-    '📧 Mengirim konfirmasi ke email kamu...'
+    'Pesanan masuk ke sistem...',
+    'Menunggu konfirmasi pembayaran dari admin...',
+    '⏳ Setelah transfer, admin akan verifikasi & kirim item.',
   ];
   let i = 0;
-  const interval = setInterval(async () => {
+  const interval = setInterval(() => {
     statusEl.textContent = steps[i];
     i++;
     if (i >= steps.length) {
       clearInterval(interval);
-      // Update status ke Supabase
-      if (order._rowId) {
-        await _sb.from('orders').update({ status: 'delivered' }).eq('id', order._rowId);
-      }
       sendDeliveryEmail(order);
-      statusEl.textContent = '✅ Selesai! Cek email kamu untuk konfirmasi.';
+      statusEl.textContent = '✅ Pesanan tercatat! Admin akan konfirmasi setelah pembayaran diterima.';
     }
   }, 1200);
 
@@ -726,7 +731,7 @@ async function sendDeliveryEmail(order) {
 function closeSuccess() { document.getElementById('successModal').classList.remove('open'); }
 
 function copyIP() {
-  navigator.clipboard.writeText('play.hyrisesmp.id').catch(() => {});
+  navigator.clipboard.writeText(_serverIP).catch(() => {});
   const btn = document.querySelector('.copy-ip');
   btn.textContent = '✓ Disalin!';
   setTimeout(() => { btn.textContent = 'Salin'; }, 1800);
