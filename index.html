@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hyrise SMP — Store</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Nunito:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#4ade80;--green-dark:#16a34a;--green-mid:#22c55e;
+  --dark:#090e0b;--dark2:#0d1810;--card:#0f1a12;--card2:#121e15;
+  --gold:#fbbf24;--gold2:#f59e0b;
+  --text:#e8f5e9;--muted:#5a7a5f;--muted2:#7a9e7f;
+  --red:#ef4444;--blue:#60a5fa;
+}
+body{background:var(--dark);color:var(--text);font-family:'Nunito',sans-serif;min-height:100vh;overflow-x:hidden;
+  background-image:radial-gradient(ellipse 100% 60% at 50% -10%,rgba(34,197,94,0.1),transparent),
+  url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%2322c55e' fill-opacity='0.025'%3E%3Cpath d='M20 20h4v4h-4zm-4-4h4v4h-4z'/%3E%3C/g%3E%3C/svg%3E");}
+
+/* NAV */
+nav{display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;
+  background:rgba(9,14,11,0.9);border-bottom:1px solid rgba(74,222,128,0.12);
+  backdrop-filter:blur(16px);position:sticky;top:0;z-index:200;}
+.logo{font-family:'Cinzel',serif;font-size:1.5rem;font-weight:900;
+  background:linear-gradient(135deg,#4ade80,#86efac);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px;}
+.logo span{-webkit-text-fill-color:#fbbf24}
+.nav-right{display:flex;align-items:center;gap:1rem}
+.cart-btn{background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.25);
+  color:var(--green);border-radius:10px;padding:0.5rem 1rem;cursor:pointer;
+  font-family:'Nunito',sans-serif;font-weight:700;font-size:0.85rem;display:flex;align-items:center;gap:6px;transition:background 0.2s;}
+.cart-btn:hover{background:rgba(74,222,128,0.2)}
+.cart-count{background:var(--green-dark);color:#fff;border-radius:999px;
+  width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:800;}
+.admin-link{color:var(--muted2);font-size:0.8rem;text-decoration:none;letter-spacing:0.5px;}
+.admin-link:hover{color:var(--green)}
+
+/* HERO */
+.hero{text-align:center;padding:4rem 2rem 3rem}
+.online-badge{display:inline-flex;align-items:center;gap:8px;
+  background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);
+  padding:0.35rem 1rem;border-radius:999px;margin-bottom:1.2rem;
+  font-size:0.75rem;font-weight:700;color:var(--green);letter-spacing:2px;text-transform:uppercase;}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--green);animation:p 1.8s infinite}
+@keyframes p{0%,100%{opacity:1}50%{opacity:0.3}}
+h1{font-family:'Cinzel',serif;font-size:clamp(2rem,5vw,4rem);font-weight:900;
+  background:linear-gradient(135deg,#fff 0%,#86efac 50%,#4ade80 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;margin-bottom:0.8rem;}
+.hero-sub{color:var(--muted2);font-size:1rem;margin-bottom:1.5rem}
+.ip-pill{display:inline-flex;align-items:center;gap:10px;background:var(--card);
+  border:1px solid rgba(74,222,128,0.2);border-radius:10px;padding:0.6rem 1.2rem;
+  font-family:monospace;font-size:1rem;color:var(--green);}
+.copy-ip{background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.3);
+  color:var(--green);border-radius:6px;padding:0.2rem 0.6rem;font-size:0.72rem;
+  cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;transition:background 0.2s;}
+.copy-ip:hover{background:rgba(74,222,128,0.25)}
+
+/* TABS */
+.tabs-wrap{display:flex;justify-content:center;gap:0.5rem;margin:2rem 0 1.5rem;flex-wrap:wrap}
+.tab{background:var(--card);border:1px solid rgba(74,222,128,0.12);color:var(--muted2);
+  padding:0.5rem 1.3rem;border-radius:999px;font-weight:700;font-size:0.85rem;
+  cursor:pointer;transition:all 0.2s;letter-spacing:0.5px;}
+.tab.on,.tab:hover{background:rgba(74,222,128,0.12);border-color:var(--green);color:var(--green)}
+
+/* GRID */
+.section{max-width:1100px;margin:0 auto;padding:0 1.5rem 4rem}
+.grid{display:none;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1.2rem}
+.grid.on{display:grid}
+
+/* CARD */
+.icard{background:var(--card);border:1px solid rgba(74,222,128,0.1);border-radius:18px;
+  overflow:hidden;transition:transform 0.2s,border-color 0.2s;position:relative;cursor:default;}
+.icard:hover{transform:translateY(-4px);border-color:rgba(74,222,128,0.3)}
+.icard.gold-card{border-color:rgba(251,191,36,0.3)}
+.icard.gold-card:hover{border-color:rgba(251,191,36,0.55)}
+.pop-badge{position:absolute;top:10px;right:10px;
+  background:linear-gradient(135deg,#b45309,#fbbf24);color:#1a0800;
+  font-size:0.65rem;font-weight:800;padding:0.18rem 0.55rem;border-radius:999px;letter-spacing:1px;text-transform:uppercase;}
+.card-icon{height:90px;display:flex;align-items:center;justify-content:center;font-size:2.8rem;
+  background:linear-gradient(135deg,rgba(74,222,128,0.06),rgba(74,222,128,0.01));
+  border-bottom:1px solid rgba(74,222,128,0.07);}
+.card-body{padding:1rem 1.1rem}
+.card-name{font-family:'Cinzel',serif;font-size:1rem;font-weight:700;margin-bottom:0.25rem}
+.card-desc{font-size:0.78rem;color:var(--muted2);line-height:1.5;margin-bottom:0.7rem}
+.perks{list-style:none;margin-bottom:0.85rem}
+.perks li{font-size:0.77rem;color:#a0e6b0;padding:1.5px 0;display:flex;align-items:center;gap:5px}
+.perks li::before{content:"✦";font-size:0.55rem;color:var(--green);flex-shrink:0}
+.card-footer{display:flex;align-items:center;justify-content:space-between}
+.price{font-family:'Cinzel',serif;font-size:1.2rem;font-weight:700;color:var(--gold)}
+.price small{font-size:0.7rem;color:var(--muted);font-family:'Nunito',sans-serif;font-weight:400}
+.btn-buy{background:linear-gradient(135deg,#16a34a,#4ade80);color:#061009;
+  padding:0.4rem 1rem;border-radius:8px;font-weight:800;font-size:0.8rem;
+  border:none;cursor:pointer;transition:opacity 0.2s,transform 0.1s;}
+.btn-buy:hover{opacity:0.85}
+.btn-buy:active{transform:scale(0.97)}
+.btn-buy.gold{background:linear-gradient(135deg,#b45309,#fbbf24)}
+
+/* CART SIDEBAR */
+.cart-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:400;opacity:0;pointer-events:none;transition:opacity 0.25s;backdrop-filter:blur(4px);}
+.cart-overlay.open{opacity:1;pointer-events:all}
+.cart-panel{position:fixed;top:0;right:0;bottom:0;width:380px;max-width:100vw;
+  background:#0d1810;border-left:1px solid rgba(74,222,128,0.15);
+  z-index:500;transform:translateX(100%);transition:transform 0.3s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;}
+.cart-panel.open{transform:translateX(0)}
+.cart-head{display:flex;align-items:center;justify-content:space-between;
+  padding:1.2rem 1.4rem;border-bottom:1px solid rgba(74,222,128,0.1);}
+.cart-title{font-family:'Cinzel',serif;font-size:1.1rem;font-weight:700;color:var(--green)}
+.close-cart{background:none;border:1px solid rgba(74,222,128,0.2);color:var(--muted2);
+  border-radius:8px;padding:0.3rem 0.7rem;cursor:pointer;font-size:0.9rem;transition:background 0.2s;}
+.close-cart:hover{background:rgba(74,222,128,0.1)}
+.cart-items{flex:1;overflow-y:auto;padding:1rem 1.4rem}
+.cart-empty{text-align:center;color:var(--muted);padding:3rem 0;font-size:0.9rem}
+.cart-item{display:flex;align-items:center;gap:12px;padding:0.8rem 0;border-bottom:1px solid rgba(74,222,128,0.06)}
+.ci-icon{font-size:1.6rem;flex-shrink:0}
+.ci-info{flex:1}
+.ci-name{font-weight:700;font-size:0.9rem}
+.ci-price{color:var(--gold);font-size:0.82rem;font-weight:600}
+.ci-rm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:4px;transition:color 0.2s}
+.ci-rm:hover{color:var(--red)}
+.cart-foot{padding:1.2rem 1.4rem;border-top:1px solid rgba(74,222,128,0.1)}
+.cart-total{display:flex;justify-content:space-between;font-size:1rem;margin-bottom:1rem}
+.cart-total span:last-child{font-family:'Cinzel',serif;font-size:1.2rem;font-weight:700;color:var(--gold)}
+.btn-checkout{width:100%;background:linear-gradient(135deg,#16a34a,#4ade80);color:#061009;
+  padding:0.85rem;border-radius:12px;font-weight:800;font-size:1rem;border:none;
+  cursor:pointer;transition:opacity 0.2s;font-family:'Nunito',sans-serif;}
+.btn-checkout:hover{opacity:0.88}
+.btn-checkout:disabled{opacity:0.4;cursor:not-allowed}
+
+/* CHECKOUT MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:600;
+  display:none;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(6px);}
+.modal-bg.open{display:flex}
+.modal{background:#0f1a12;border:1px solid rgba(74,222,128,0.2);border-radius:20px;
+  width:100%;max-width:480px;overflow:hidden;animation:slideUp 0.3s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.modal-head{padding:1.4rem 1.6rem;border-bottom:1px solid rgba(74,222,128,0.1);
+  display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-family:'Cinzel',serif;font-size:1.2rem;font-weight:700}
+.modal-close{background:none;border:none;color:var(--muted2);font-size:1.3rem;cursor:pointer;transition:color 0.2s}
+.modal-close:hover{color:var(--text)}
+.modal-body{padding:1.6rem}
+.field{margin-bottom:1.2rem}
+.field label{display:block;font-size:0.8rem;font-weight:700;color:var(--muted2);
+  letter-spacing:1px;text-transform:uppercase;margin-bottom:0.5rem;}
+.field input,.field select{width:100%;background:rgba(74,222,128,0.05);
+  border:1px solid rgba(74,222,128,0.15);border-radius:10px;
+  padding:0.7rem 1rem;color:var(--text);font-family:'Nunito',sans-serif;font-size:0.95rem;
+  outline:none;transition:border-color 0.2s;}
+.field input:focus,.field select:focus{border-color:var(--green)}
+.field input::placeholder{color:var(--muted)}
+.field select option{background:#0f1a12}
+.order-summary{background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.1);
+  border-radius:12px;padding:1rem;margin-bottom:1.2rem;}
+.os-title{font-size:0.75rem;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.7rem}
+.os-item{display:flex;justify-content:space-between;font-size:0.85rem;padding:2px 0;color:var(--muted2)}
+.os-total{display:flex;justify-content:space-between;font-weight:700;
+  padding-top:0.6rem;margin-top:0.6rem;border-top:1px solid rgba(74,222,128,0.1);}
+.os-total span:last-child{color:var(--gold)}
+.payment-methods{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin-bottom:1.2rem}
+.pm{background:rgba(74,222,128,0.04);border:1.5px solid rgba(74,222,128,0.1);
+  border-radius:10px;padding:0.7rem;text-align:center;cursor:pointer;transition:all 0.2s;}
+.pm:hover,.pm.sel{background:rgba(74,222,128,0.1);border-color:var(--green)}
+.pm-name{font-size:0.78rem;font-weight:700;margin-top:4px}
+.pm-icon{font-size:1.3rem}
+.btn-pay{width:100%;background:linear-gradient(135deg,#16a34a,#4ade80);color:#061009;
+  padding:0.9rem;border-radius:12px;font-weight:800;font-size:1rem;border:none;
+  cursor:pointer;transition:opacity 0.2s;font-family:'Nunito',sans-serif;}
+.btn-pay:hover{opacity:0.88}
+
+/* SUCCESS MODAL */
+.success-modal{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:700;
+  display:none;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(8px);}
+.success-modal.open{display:flex}
+.success-box{background:#0f1a12;border:1px solid rgba(74,222,128,0.3);border-radius:20px;
+  width:100%;max-width:440px;padding:2.5rem;text-align:center;animation:slideUp 0.3s ease;}
+.success-icon{font-size:4rem;margin-bottom:1rem;animation:bounce 0.5s ease 0.2s both}
+@keyframes bounce{from{transform:scale(0)}50%{transform:scale(1.2)}to{transform:scale(1)}}
+.success-title{font-family:'Cinzel',serif;font-size:1.5rem;font-weight:700;color:var(--green);margin-bottom:0.5rem}
+.success-sub{color:var(--muted2);font-size:0.9rem;line-height:1.6;margin-bottom:1.5rem}
+.order-details{background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.15);
+  border-radius:12px;padding:1.1rem;margin-bottom:1.5rem;text-align:left;}
+.od-row{display:flex;justify-content:space-between;font-size:0.83rem;padding:3px 0}
+.od-row span:first-child{color:var(--muted2)}
+.od-row span:last-child{font-weight:700;color:var(--text)}
+.delivery-status{background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);
+  border-radius:10px;padding:0.8rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:10px;}
+.ds-dot{width:10px;height:10px;border-radius:50%;background:var(--green);animation:p 1.5s infinite;flex-shrink:0}
+.ds-text{font-size:0.82rem;color:var(--green);font-weight:700}
+.btn-close-success{background:var(--card2);border:1px solid rgba(74,222,128,0.15);
+  color:var(--text);padding:0.7rem 2rem;border-radius:10px;
+  font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;font-size:0.9rem;
+  transition:background 0.2s;}
+.btn-close-success:hover{background:rgba(74,222,128,0.1)}
+
+/* TOAST */
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(100px);
+  background:#0d2e14;border:1px solid rgba(74,222,128,0.3);color:var(--green);
+  padding:0.7rem 1.4rem;border-radius:999px;font-weight:700;font-size:0.85rem;
+  z-index:800;transition:transform 0.3s ease;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Hyrise<span>SMP</span></div>
+  <div class="nav-right">
+    <a class="admin-link" href="admin.html">⚙️ Admin Panel</a>
+    <button class="cart-btn" onclick="toggleCart()">
+      🛒 Keranjang
+      <span class="cart-count" id="cartCount">0</span>
+    </button>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="online-badge"><span class="pulse"></span>Server Online — 47 Player</div>
+  <h1>Hyrise SMP Store</h1>
+  <p class="hero-sub">Beli rank, key, dan item — langsung dikirim otomatis ke akunmu!</p>
+  <div class="ip-pill">
+    play.hyrisesmp.id
+    <button class="copy-ip" onclick="copyIP()">Salin</button>
+  </div>
+</div>
+
+<div class="section">
+  <div class="tabs-wrap">
+    <button class="tab on" onclick="showTab('rank',this)">👑 Rank</button>
+    <button class="tab" onclick="showTab('key',this)">🗝️ Key</button>
+    <button class="tab" onclick="showTab('item',this)">📦 Item</button>
+    <button class="tab" onclick="showTab('misc',this)">⚡ Lainnya</button>
+  </div>
+
+  <!-- RANK -->
+  <div id="g-rank" class="grid on">
+    <div class="icard" data-id="rank-akar" data-name="Rank Akar" data-price="15000" data-icon="🌿" data-type="rank">
+      <div class="card-icon">🌿</div>
+      <div class="card-body">
+        <div class="card-name">Rank Akar</div>
+        <div class="card-desc">Rank pemula untuk memulai perjalananmu di Hyrise SMP.</div>
+        <ul class="perks">
+          <li>Prefix [Akar] berwarna hijau</li>
+          <li>3 Home tambahan</li>
+          <li>Akses /kit starter</li>
+          <li>1 Klaim chunk ekstra</li>
+        </ul>
+        <div class="card-footer">
+          <div class="price">Rp 15.000 <small>/bulan</small></div>
+          <button class="btn-buy" onclick="addToCart(this.closest('.icard'))">+ Keranjang</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="icard gold-card" data-id="rank-api" data-name="Rank Api" data-price="35000" data-icon="🔥" data-type="rank">
+      <div class="pop-badge">⭐ Terlaris</div>
+      <div class="card-icon">🔥</div>
+      <div class="card-body">
+        <div class="card-name">Rank Api</div>
+        <div class="card-desc">Rank menengah dengan banyak keuntungan eksklusif.</div>
+        <ul class="perks">
+          <li>Prefix [Api] berwarna oranye</li>
+          <li>7 Home tambahan</li>
+          <li>Akses /kit api (mingguan)</li>
+          <li>3 Klaim chunk ekstra</li>
+          <li>Fly di spawn</li>
+        </ul>
+        <div class="card-footer">
+          <div class="price">Rp 35.000 <small>/bulan</small></div>
+          <button class="btn-buy gold" onclick="addToCart(this.closest('.icard'))">+ Keranjang</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="icard gold-card" data-id="rank-petir" data-name="Rank Petir" data-price="65000" data-icon="⚡" data-type="rank">
+      <div class="card-icon">⚡</div>
+      <div class="card-body">
+        <div class="card-name">Rank Petir</div>
+        <div class="card-desc">Rank premium dengan semua fitur unggulan server.</div>
+        <ul class="perks">
+          <li>Prefix [Petir] berwarna kuning</li>
+          <li>Unlimited Home</li>
+          <li>Akses /kit petir (harian)</li>
+          <li>10 Klaim chunk ekstra</li>
+          <li>Fly di mana saja</li>
+          <li>Nick kustom berwarna</li>
+        </ul>
+        <div class="card-footer">
+          <div class="price">Rp 65.000 <small>/bulan</small></div>
+          <button class="btn-buy gold" onclick="addToCart(this.closest('.icard'))">+ Keranjang</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KEY -->
+  <div id="g-key" class="grid">
+    <div class="icard" data-id="key-kayu" data-name="Key Kayu" data-price="5000" data-icon="🗝️" data-type="key">
+      <div class="card-icon">🗝️</div>
+      <div class="card-body">
+        <div class="card-name">Key Kayu</div>
+        <div class="card-desc">Key dasar untuk membuka loot box biasa.</div>
+        <ul class="perks">
+          <li>Item survival standar</li>
+          <li>Kemungkinan dapat emerald</li>
+          <li>Food &amp; potion</li>
+        </ul>
+        <div class="card-footer">
+          <div class="price">Rp 5.000</div>
+          <button class="btn-buy" onclick="addToCart(this.closest('.icard'))">+ Keranjang</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="icard gold-card" data-id="key-kristal" data-name="Key Kristal" data-price="20000" data-icon="💎" data-type="key">
+      <div class="pop-badge">🔥 Hits</div>
+      <div class="card-icon">💎</div>
+      <div class="card-body">
+        <div class="card-name">Key Kristal</div>
+        <div class="card-desc">Key langka dengan reward berkualitas tinggi.</div>
+        <ul class="perks">
+          <li>Enchanted armor &amp; tools</li>
+          <li>Netherite fragment</li>
+          <li>Kemungkinan dapat rank</li>
+          <li>In-game currency</li>
+        </ul>
+        <div class="card-footer">
+          <div class="price">Rp 20.000</div>
+          <button class="btn-buy gold" onclick="addToCart(this.closest('.icard'))">+ Keranjang</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="icard gold-card" data-id="key-royal" data-name="Key Royal" data-price="45000" data-icon="👑" data-type="key">
+      <div class="card-icon">👑</div>
+      <div class="card-body">
+        <div class="card-name">Key Royal</div>
+        <div class="card-desc">Key paling langka dengan hadiah eksklusif terbaik.</div>
+        <ul class="perks">
+          <li>Full netherite enchanted set</li>
+          <li>Rank upgrade gratis</li>
+          <li>Custom tag eksklusif</li>
+          <li>Bonus in-game currency besar</li>
+        </ul>
+        <div class="card-footer">
+          <div class="price">Rp 45.000</div>
+          <button class="btn-buy gold" onclick="addToCart(this.closest('.icard'))">+ Keranjang</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ITEM -->
+  <div id="g-item" class="grid">
+    <div class="icard" data-id="coin-10k" data-name="Koin 10.000" data-price="10000" data-icon="🪙" data-type="item">
+      <div class="card-icon">🪙</div>
+      <div class="card-body">
+        <div class="card-name">Koin 10.000</div>
+        <div class="card-desc">In-game currency untuk transaksi di pasar player.</div>
+        <ul class="perks"><li>Langsung masuk inventory</li><li>Bisa dipakai di /shop</li></ul>
+        <div class="card-footer">
+          <div class="price">Rp 10.000</div>
+          <button class="btn-buy" onclick="addToCart(this.closest('.icard'))">+ Keranjang</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="icard" data-id="extra-home" data-name="Extra Home +5" data-price="12000" data-icon="🏡" data-type="item">
+      <div class="card-icon">🏡</div>
+      <div class="card-body">
+        <div class="card-name">Extra Home +5</div>
+        <div class="card-desc">Tambah 5 slot home permanen ke akunmu.</div>
+        <ul class="perks"><li>Permanen, tidak expire</li><li>Stackable dengan rank</li></ul>
+        <div class="card-footer">
+          <div class="price">Rp 12.000</div>
+          <button class="btn-buy" onclick="addToCart(this.closest('.icard'))">+ Keranjang</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="icard gold-card" data-id="starter-pack" data-name="Starter Pack" data-price="25000" data-icon="🎒" data-type="item">
+      <div class="pop-badge">💎 Value</div>
+      <div class="card-icon">🎒</div>
+      <div class="card-body">
+        <div class="card-name">Starter Pack</div>
+        <div class="card-desc">Paket terbaik untuk pemain baru!</div>
+        <ul class="perks"><li>Full iron set enchanted</li><li>5.000 in-game koin</li><li>3 Key Kayu</li><li>Food pack 64x</li></ul>
+        <div class="card-footer">
+          <div class="price">Rp 25.000</div>
+          <button class="btn-buy gold" onclick="addToCart(this.closest('.icard'))">+ Keranjang</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MISC -->
+  <div id="g-misc" class="grid">
+    <div class="icard" data-id="custom-tag" data-name="Custom Tag" data-price="20000" data-icon="💬" data-type="misc">
+      <div class="card-icon">💬</div>
+      <div class="card-body">
+        <div class="card-name">Custom Tag</div>
+        <div class="card-desc">Tag berwarna kustom di samping namamu di chat.</div>
+        <ul class="perks"><li>Max 10 karakter</li><li>Warna bebas pilih</li><li>Permanen</li></ul>
+        <div class="card-footer">
+          <div class="price">Rp 20.000</div>
+          <button class="btn-buy" onclick="addToCart(this.closest('.icard'))">+ Keranjang</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="icard" data-id="nick-warna" data-name="Nick Warna" data-price="15000" data-icon="🎨" data-type="misc">
+      <div class="card-icon">🎨</div>
+      <div class="card-body">
+        <div class="card-name">Nick Warna</div>
+        <div class="card-desc">Ganti nickname dengan warna &amp; format kustom (30 hari).</div>
+        <ul class="perks"><li>Format bold, italic</li><li>Gradient warna</li></ul>
+        <div class="card-footer">
+          <div class="price">Rp 15.000 <small>/bulan</small></div>
+          <button class="btn-buy" onclick="addToCart(this.closest('.icard'))">+ Keranjang</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="icard gold-card" data-id="bundle-vip" data-name="Bundle VIP" data-price="85000" data-icon="🌟" data-type="misc">
+      <div class="pop-badge">🔥 Bundle</div>
+      <div class="card-icon">🌟</div>
+      <div class="card-body">
+        <div class="card-name">Bundle VIP</div>
+        <div class="card-desc">Bundel terbaik hemat 30%!</div>
+        <ul class="perks"><li>Rank Api 1 bulan</li><li>3 Key Kristal</li><li>Custom Tag + Nick Warna</li><li>10.000 in-game koin</li></ul>
+        <div class="card-footer">
+          <div class="price">Rp 85.000</div>
+          <button class="btn-buy gold" onclick="addToCart(this.closest('.icard'))">+ Keranjang</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CART -->
+<div class="cart-overlay" id="cartOverlay" onclick="toggleCart()"></div>
+<div class="cart-panel" id="cartPanel">
+  <div class="cart-head">
+    <div class="cart-title">🛒 Keranjang Belanja</div>
+    <button class="close-cart" onclick="toggleCart()">✕ Tutup</button>
+  </div>
+  <div class="cart-items" id="cartItems">
+    <div class="cart-empty">Keranjangmu kosong.<br>Tambah item untuk mulai!</div>
+  </div>
+  <div class="cart-foot">
+    <div class="cart-total">
+      <span>Total</span>
+      <span id="cartTotal">Rp 0</span>
+    </div>
+    <button class="btn-checkout" id="checkoutBtn" onclick="openCheckout()" disabled>Lanjut Pembayaran →</button>
+  </div>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="modal-bg" id="checkoutModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Checkout</div>
+      <button class="modal-close" onclick="closeCheckout()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Username Minecraft</label>
+        <input type="text" id="mcUsername" placeholder="Masukkan username IGN kamu..." maxlength="30">
+      </div>
+      <div class="field">
+        <label>Email (untuk konfirmasi)</label>
+        <input type="email" id="emailInput" placeholder="email@kamu.com">
+      </div>
+      <div class="order-summary" id="orderSummary"></div>
+      <div class="field">
+        <label>Metode Pembayaran</label>
+        <div class="payment-methods" style="grid-template-columns:repeat(3,1fr)">
+          <div class="pm sel" onclick="selectPM(this,'QRIS')"><div class="pm-icon">📱</div><div class="pm-name">QRIS</div></div>
+          <div class="pm" onclick="selectPM(this,'DANA')"><div class="pm-icon" style="font-size:1rem;font-weight:800;color:#118EEA;letter-spacing:-0.5px">DANA</div><div class="pm-name">DANA</div></div>
+          <div class="pm" onclick="selectPM(this,'GoPay')"><div class="pm-icon">💚</div><div class="pm-name">GoPay</div></div>
+          <div class="pm" onclick="selectPM(this,'OVO')"><div class="pm-icon">💜</div><div class="pm-name">OVO</div></div>
+          <div class="pm" onclick="selectPM(this,'Transfer')"><div class="pm-icon">🏦</div><div class="pm-name">Bank Transfer</div></div>
+        </div>
+      </div>
+      <button class="btn-pay" onclick="processPayment()">💳 Bayar Sekarang</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS MODAL -->
+<div class="success-modal" id="successModal">
+  <div class="success-box">
+    <div class="success-icon">✅</div>
+    <div class="success-title">Pembayaran Berhasil!</div>
+    <div class="success-sub">Pesananmu sedang diproses dan akan <strong>langsung dikirim otomatis</strong> ke akunmu dalam beberapa detik.</div>
+    <div class="order-details" id="orderDetails"></div>
+    <div class="delivery-status">
+      <div class="ds-dot"></div>
+      <div class="ds-text" id="deliveryStatus">Mengirim item ke server...</div>
+    </div>
+    <button class="btn-close-success" onclick="closeSuccess()">Kembali ke Store</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- EmailJS SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://bzgfuivhbomwazkxxiiy.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_jh6wrhABjLJ5wxFc5t-7cA_UtphsYrE';
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
+
+<script>
+// ============================================================
+// KONFIGURASI EMAIL — Isi dengan data EmailJS kamu
+// Daftar gratis di: https://www.emailjs.com
+// ============================================================
+const EMAIL_CONFIG = {
+  serviceId:  'YOUR_SERVICE_ID',   // ← Ganti dengan Service ID EmailJS
+  templateId: 'YOUR_TEMPLATE_ID',  // ← Ganti dengan Template ID EmailJS
+  publicKey:  'YOUR_PUBLIC_KEY',   // ← Ganti dengan Public Key EmailJS
+  fromName:   'Hyrise SMP',
+  serverName: 'Hyrise SMP',
+  serverIp:   'play.hyrisesmp.id',
+  discord:    'discord.gg/hyrisesmp'
+};
+
+// Inisialisasi EmailJS
+(function(){
+  if(typeof emailjs !== 'undefined') emailjs.init({ publicKey: EMAIL_CONFIG.publicKey });
+})();
+
+// ============================================================
+
+let cart = [];
+let selectedPM = 'QRIS';
+
+const fmt = n => 'Rp ' + n.toLocaleString('id-ID');
+const genOrderId = () => 'HRS-' + Date.now().toString(36).toUpperCase();
+
+function showTab(tab, el) {
+  document.querySelectorAll('.grid').forEach(g => g.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.getElementById('g-' + tab).classList.add('on');
+  el.classList.add('on');
+}
+
+function addToCart(card) {
+  const id = card.dataset.id;
+  const existing = cart.find(i => i.id === id);
+  if (existing) { showToast('Item sudah ada di keranjang!'); return; }
+  cart.push({
+    id, name: card.dataset.name,
+    price: parseInt(card.dataset.price),
+    icon: card.dataset.icon,
+    type: card.dataset.type
+  });
+  updateCartUI();
+  showToast('✦ ' + card.dataset.name + ' ditambahkan!');
+}
+
+function removeFromCart(id) {
+  cart = cart.filter(i => i.id !== id);
+  updateCartUI();
+}
+
+function updateCartUI() {
+  const count = cart.length;
+  const total = cart.reduce((s, i) => s + i.price, 0);
+  document.getElementById('cartCount').textContent = count;
+  document.getElementById('cartTotal').textContent = fmt(total);
+  document.getElementById('checkoutBtn').disabled = count === 0;
+
+  const wrap = document.getElementById('cartItems');
+  if (count === 0) {
+    wrap.innerHTML = '<div class="cart-empty">Keranjangmu kosong.<br>Tambah item untuk mulai!</div>';
+    return;
+  }
+  wrap.innerHTML = cart.map(i => `
+    <div class="cart-item">
+      <div class="ci-icon">${i.icon}</div>
+      <div class="ci-info">
+        <div class="ci-name">${i.name}</div>
+        <div class="ci-price">${fmt(i.price)}</div>
+      </div>
+      <button class="ci-rm" onclick="removeFromCart('${i.id}')">✕</button>
+    </div>`).join('');
+}
+
+function toggleCart() {
+  document.getElementById('cartOverlay').classList.toggle('open');
+  document.getElementById('cartPanel').classList.toggle('open');
+}
+
+function openCheckout() {
+  const total = cart.reduce((s, i) => s + i.price, 0);
+  const summary = document.getElementById('orderSummary');
+  summary.innerHTML = `<div class="os-title">Ringkasan Pesanan</div>` +
+    cart.map(i => `<div class="os-item"><span>${i.icon} ${i.name}</span><span>${fmt(i.price)}</span></div>`).join('') +
+    `<div class="os-total"><span>Total</span><span>${fmt(total)}</span></div>`;
+  document.getElementById('checkoutModal').classList.add('open');
+  toggleCart();
+}
+
+function closeCheckout() { document.getElementById('checkoutModal').classList.remove('open'); }
+
+function selectPM(el, pm) {
+  document.querySelectorAll('.pm').forEach(p => p.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedPM = pm;
+}
+
+async function processPayment() {
+  const username = document.getElementById('mcUsername').value.trim();
+  const email = document.getElementById('emailInput').value.trim();
+  if (!username) { showToast('⚠️ Masukkan username Minecraft kamu!'); return; }
+  if (!email) { showToast('⚠️ Masukkan email kamu!'); return; }
+
+  const orderId = genOrderId();
+  const total = cart.reduce((s, i) => s + i.price, 0);
+  const items = [...cart];
+  const now = new Date();
+
+  const newOrder = {
+    order_id: orderId,
+    username, email,
+    items: items.map(i => i.name),
+    item_details: items,
+    total, payment: selectedPM,
+    status: 'processing',
+    date: now.toISOString(),
+    date_str: now.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})
+  };
+
+  // Simpan ke Supabase
+  const { data, error } = await _sb.from('orders').insert([newOrder]).select().single();
+  if (error) {
+    console.error('[Hyrise] Gagal simpan ke Supabase:', error);
+    showToast('⚠️ Gagal menyimpan pesanan. Coba lagi.');
+    return;
+  }
+  newOrder._rowId = data.id;
+
+  closeCheckout();
+  showSuccess(newOrder);
+}
+
+async function showSuccess(order) {
+  document.getElementById('orderDetails').innerHTML = `
+    <div class="od-row"><span>Order ID</span><span>${order.order_id}</span></div>
+    <div class="od-row"><span>Username</span><span>${order.username}</span></div>
+    <div class="od-row"><span>Item</span><span>${order.items.join(', ')}</span></div>
+    <div class="od-row"><span>Total</span><span>${fmt(order.total)}</span></div>
+    <div class="od-row"><span>Metode</span><span>${order.payment}</span></div>`;
+
+  document.getElementById('successModal').classList.add('open');
+
+  const statusEl = document.getElementById('deliveryStatus');
+  const steps = [
+    'Memverifikasi pembayaran...',
+    'Terhubung ke server Minecraft...',
+    'Menjalankan perintah pengiriman...',
+    '✅ Item berhasil dikirim ke ' + order.username + '!',
+    '📧 Mengirim konfirmasi ke email kamu...'
+  ];
+  let i = 0;
+  const interval = setInterval(async () => {
+    statusEl.textContent = steps[i];
+    i++;
+    if (i >= steps.length) {
+      clearInterval(interval);
+      // Update status ke Supabase
+      if (order._rowId) {
+        await _sb.from('orders').update({ status: 'delivered' }).eq('id', order._rowId);
+      }
+      sendDeliveryEmail(order);
+      statusEl.textContent = '✅ Selesai! Cek email kamu untuk konfirmasi.';
+    }
+  }, 1200);
+
+  cart = [];
+  updateCartUI();
+}
+
+async function sendDeliveryEmail(order) {
+  if (typeof emailjs === 'undefined') return;
+  if (EMAIL_CONFIG.publicKey === 'YOUR_PUBLIC_KEY') {
+    console.warn('[Hyrise] EmailJS belum dikonfigurasi. Isi EMAIL_CONFIG di script.');
+    return;
+  }
+
+  const itemListHtml = order.items.map(item =>
+    `<tr><td style="padding:6px 12px;border-bottom:1px solid #1a2e1c;">✦ ${item}</td></tr>`
+  ).join('');
+
+  const params = {
+    to_email:    order.email,
+    to_name:     order.username,
+    order_id:    order.id,
+    mc_username: order.username,
+    item_list:   order.items.join(', '),
+    item_list_html: itemListHtml,
+    total:       fmt(order.total),
+    payment:     order.payment,
+    date:        order.dateStr,
+    server_ip:   EMAIL_CONFIG.serverIp,
+    server_name: EMAIL_CONFIG.serverName,
+    discord_url: EMAIL_CONFIG.discord,
+    from_name:   EMAIL_CONFIG.fromName,
+  };
+
+  try {
+    await emailjs.send(EMAIL_CONFIG.serviceId, EMAIL_CONFIG.templateId, params);
+    console.log('[Hyrise] Email konfirmasi terkirim ke', order.email);
+  } catch(err) {
+    console.error('[Hyrise] Gagal kirim email:', err);
+  }
+}
+
+function closeSuccess() { document.getElementById('successModal').classList.remove('open'); }
+
+function copyIP() {
+  navigator.clipboard.writeText('play.hyrisesmp.id').catch(() => {});
+  const btn = document.querySelector('.copy-ip');
+  btn.textContent = '✓ Disalin!';
+  setTimeout(() => { btn.textContent = 'Salin'; }, 1800);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+</script>
+</body>
+</html>

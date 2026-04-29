@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hyrise SMP — Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#4ade80;--green-dark:#16a34a;
+  --dark:#08100a;--sidebar:#0b1610;--card:#0e1a11;--card2:#111e14;
+  --gold:#fbbf24;--red:#f87171;--blue:#60a5fa;--purple:#c084fc;
+  --text:#e2f0e4;--muted:#4d7055;--muted2:#6b9070;
+  --border:rgba(74,222,128,0.1);
+}
+body{background:var(--dark);color:var(--text);font-family:'Nunito',sans-serif;min-height:100vh;display:flex}
+
+/* LOGIN */
+.login-screen{position:fixed;inset:0;background:#08100a;z-index:999;
+  display:flex;align-items:center;justify-content:center;
+  background-image:radial-gradient(ellipse 80% 60% at 50% 50%,rgba(34,197,94,0.07),transparent);}
+.login-box{background:var(--card);border:1px solid rgba(74,222,128,0.2);border-radius:20px;
+  padding:2.5rem;width:360px;text-align:center;}
+.login-logo{font-family:'Cinzel',serif;font-size:1.8rem;font-weight:900;
+  background:linear-gradient(135deg,#4ade80,#86efac);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:0.3rem;}
+.login-sub{color:var(--muted2);font-size:0.82rem;margin-bottom:2rem}
+.login-field{text-align:left;margin-bottom:1rem}
+.login-field label{display:block;font-size:0.75rem;font-weight:700;color:var(--muted2);
+  text-transform:uppercase;letter-spacing:1px;margin-bottom:0.4rem;}
+.login-field input{width:100%;background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.15);
+  border-radius:10px;padding:0.7rem 1rem;color:var(--text);font-family:'Nunito',sans-serif;
+  font-size:0.95rem;outline:none;transition:border-color 0.2s;}
+.login-field input:focus{border-color:var(--green)}
+.login-err{color:var(--red);font-size:0.8rem;margin-bottom:0.8rem;display:none}
+.btn-login{width:100%;background:linear-gradient(135deg,#16a34a,#4ade80);color:#061009;
+  padding:0.85rem;border-radius:12px;font-weight:800;font-size:1rem;border:none;cursor:pointer;
+  font-family:'Nunito',sans-serif;margin-top:0.5rem;transition:opacity 0.2s;}
+.btn-login:hover{opacity:0.88}
+.login-hint{color:var(--muted);font-size:0.75rem;margin-top:1rem}
+
+/* SIDEBAR */
+.sidebar{width:220px;flex-shrink:0;background:var(--sidebar);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;min-height:100vh;padding:1.5rem 0;}
+.s-logo{font-family:'Cinzel',serif;font-size:1.2rem;font-weight:900;
+  background:linear-gradient(135deg,#4ade80,#86efac);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  padding:0 1.2rem;margin-bottom:0.2rem;}
+.s-sub{font-size:0.7rem;color:var(--muted);padding:0 1.2rem;margin-bottom:1.5rem;letter-spacing:0.5px}
+.s-section{font-size:0.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;
+  letter-spacing:1.5px;padding:0 1.2rem;margin:1rem 0 0.4rem;}
+.s-nav{list-style:none}
+.s-nav li a{display:flex;align-items:center;gap:10px;padding:0.6rem 1.2rem;
+  color:var(--muted2);text-decoration:none;font-weight:600;font-size:0.85rem;
+  transition:background 0.15s,color 0.15s;border-left:2px solid transparent;}
+.s-nav li a:hover{background:rgba(74,222,128,0.06);color:var(--text)}
+.s-nav li a.active{background:rgba(74,222,128,0.1);color:var(--green);border-left-color:var(--green)}
+.s-nav li a .icon{font-size:1rem;width:20px;text-align:center}
+.sidebar-foot{margin-top:auto;padding:1rem 1.2rem;border-top:1px solid var(--border)}
+.admin-badge{display:flex;align-items:center;gap:8px}
+.av{width:30px;height:30px;border-radius:50%;background:rgba(74,222,128,0.15);
+  display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:var(--green);}
+.av-name{font-size:0.82rem;font-weight:700}
+.av-role{font-size:0.7rem;color:var(--muted2)}
+.logout-btn{display:block;width:100%;margin-top:0.8rem;background:rgba(248,113,113,0.08);
+  border:1px solid rgba(248,113,113,0.2);color:var(--red);border-radius:8px;
+  padding:0.45rem;font-size:0.78rem;font-weight:700;cursor:pointer;transition:background 0.2s;
+  font-family:'Nunito',sans-serif;}
+.logout-btn:hover{background:rgba(248,113,113,0.15)}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;padding:2rem}
+.page{display:none}
+.page.active{display:block}
+.page-title{font-family:'Cinzel',serif;font-size:1.5rem;font-weight:700;margin-bottom:0.3rem}
+.page-sub{color:var(--muted2);font-size:0.85rem;margin-bottom:2rem}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1rem;margin-bottom:2rem}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.2rem}
+.stat-label{font-size:0.72rem;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:0.5rem}
+.stat-val{font-family:'Cinzel',serif;font-size:1.9rem;font-weight:700}
+.stat-change{font-size:0.75rem;margin-top:4px}
+.up{color:#4ade80}.down{color:var(--red)}.neu{color:var(--muted2)}
+
+/* TABLE */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.table-head{display:flex;align-items:center;justify-content:space-between;
+  padding:1.1rem 1.4rem;border-bottom:1px solid var(--border);}
+.table-title{font-weight:700;font-size:0.95rem}
+.table-actions{display:flex;gap:0.5rem}
+.t-btn{background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.15);
+  color:var(--green);border-radius:8px;padding:0.35rem 0.8rem;font-size:0.78rem;
+  font-weight:700;cursor:pointer;transition:background 0.2s;font-family:'Nunito',sans-serif;}
+.t-btn:hover{background:rgba(74,222,128,0.15)}
+.t-btn.red{background:rgba(248,113,113,0.08);border-color:rgba(248,113,113,0.2);color:var(--red)}
+.t-btn.red:hover{background:rgba(248,113,113,0.15)}
+.search-inp{background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.12);
+  border-radius:8px;padding:0.35rem 0.8rem;color:var(--text);font-family:'Nunito',sans-serif;
+  font-size:0.8rem;outline:none;width:180px;transition:border-color 0.2s;}
+.search-inp:focus{border-color:var(--green)}
+.search-inp::placeholder{color:var(--muted)}
+table{width:100%;border-collapse:collapse}
+thead tr{border-bottom:1px solid var(--border)}
+th{padding:0.7rem 1.2rem;text-align:left;font-size:0.7rem;font-weight:700;
+  color:var(--muted2);text-transform:uppercase;letter-spacing:1px;}
+td{padding:0.8rem 1.2rem;font-size:0.83rem;border-bottom:1px solid rgba(74,222,128,0.04)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:rgba(74,222,128,0.025)}
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:0.2rem 0.6rem;
+  border-radius:999px;font-size:0.72rem;font-weight:700;letter-spacing:0.5px}
+.status-delivered{background:rgba(74,222,128,0.12);color:var(--green)}
+.status-processing{background:rgba(251,191,36,0.12);color:var(--gold)}
+.status-pending{background:rgba(96,165,250,0.12);color:var(--blue)}
+.status-failed{background:rgba(248,113,113,0.12);color:var(--red)}
+.type-badge{display:inline-block;padding:0.15rem 0.5rem;border-radius:6px;
+  font-size:0.7rem;font-weight:700;background:rgba(192,132,252,0.12);color:var(--purple)}
+.empty-row td{text-align:center;color:var(--muted);padding:2.5rem;font-size:0.85rem}
+
+/* ORDER DETAIL */
+.detail-modal{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;
+  display:none;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(6px);}
+.detail-modal.open{display:flex}
+.detail-box{background:#0e1a11;border:1px solid rgba(74,222,128,0.2);border-radius:20px;
+  width:100%;max-width:500px;animation:slideUp 0.25s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.detail-head{display:flex;align-items:center;justify-content:space-between;
+  padding:1.2rem 1.5rem;border-bottom:1px solid rgba(74,222,128,0.1);}
+.detail-title{font-family:'Cinzel',serif;font-size:1rem;font-weight:700;color:var(--green)}
+.detail-close{background:none;border:none;color:var(--muted2);font-size:1.2rem;cursor:pointer}
+.detail-body{padding:1.5rem}
+.d-row{display:flex;justify-content:space-between;padding:0.5rem 0;
+  border-bottom:1px solid rgba(74,222,128,0.04);font-size:0.84rem}
+.d-row:last-child{border:none}
+.d-row span:first-child{color:var(--muted2)}
+.d-row span:last-child{font-weight:700}
+.d-actions{display:flex;gap:0.6rem;margin-top:1.2rem}
+.d-actions button{flex:1;padding:0.6rem;border-radius:10px;font-weight:700;
+  font-size:0.82rem;cursor:pointer;font-family:'Nunito',sans-serif;transition:opacity 0.2s}
+.d-actions button:hover{opacity:0.85}
+.btn-deliver{background:linear-gradient(135deg,#16a34a,#4ade80);color:#061009;border:none}
+.btn-refund{background:rgba(248,113,113,0.12);color:var(--red);border:1px solid rgba(248,113,113,0.25)}
+.btn-resend{background:rgba(96,165,250,0.12);color:var(--blue);border:1px solid rgba(96,165,250,0.25)}
+
+/* CMD BOX */
+.cmd-box{background:#020d04;border:1px solid rgba(74,222,128,0.15);border-radius:12px;
+  padding:1rem;margin-top:1rem;font-family:monospace;font-size:0.8rem;color:var(--green);
+  max-height:150px;overflow-y:auto;line-height:1.8;}
+.cmd-line{display:block;opacity:0;animation:fadeIn 0.3s forwards}
+@keyframes fadeIn{to{opacity:1}}
+
+/* REVENUE CHART */
+.chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:16px;
+  padding:1.4rem;margin-bottom:1.5rem}
+.chart-title{font-weight:700;margin-bottom:1.2rem;font-size:0.95rem}
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:120px}
+.bar{flex:1;border-radius:6px 6px 0 0;position:relative;cursor:default;
+  background:linear-gradient(to top,#16a34a,#4ade80);opacity:0.7;transition:opacity 0.2s;min-width:0}
+.bar:hover{opacity:1}
+.bar-label{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);
+  font-size:0.62rem;color:var(--muted2);white-space:nowrap}
+.bar-val{position:absolute;top:-22px;left:50%;transform:translateX(-50%);
+  font-size:0.6rem;color:var(--green);font-weight:700;white-space:nowrap}
+
+/* PRODUCT MANAGE */
+.prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem}
+.prod-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.1rem;
+  display:flex;align-items:center;gap:12px;}
+.prod-icon{font-size:1.8rem;flex-shrink:0}
+.prod-info{flex:1;min-width:0}
+.prod-name{font-weight:700;font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prod-price{font-size:0.78rem;color:var(--gold);font-weight:700}
+.prod-sales{font-size:0.7rem;color:var(--muted2)}
+.prod-actions{display:flex;gap:5px;margin-top:6px}
+.pa-btn{background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.15);
+  color:var(--green);border-radius:6px;padding:0.15rem 0.5rem;font-size:0.7rem;
+  font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:background 0.2s;}
+.pa-btn:hover{background:rgba(74,222,128,0.15)}
+.pa-btn.del{background:rgba(248,113,113,0.08);border-color:rgba(248,113,113,0.2);color:var(--red)}
+
+/* SETTINGS */
+.settings-grid{display:grid;gap:1rem;max-width:600px}
+.setting-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.3rem}
+.setting-title{font-weight:700;margin-bottom:1rem;font-size:0.95rem;color:var(--green)}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid rgba(74,222,128,0.04)}
+.setting-row:last-child{border:none}
+.sr-label{font-size:0.84rem}
+.sr-sub{font-size:0.72rem;color:var(--muted2);margin-top:1px}
+.toggle{position:relative;width:42px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{position:absolute;inset:0;background:rgba(74,222,128,0.1);border-radius:999px;
+  cursor:pointer;transition:background 0.2s;border:1px solid rgba(74,222,128,0.2)}
+.toggle-track::after{content:'';position:absolute;left:3px;top:50%;transform:translateY(-50%);
+  width:16px;height:16px;border-radius:50%;background:var(--muted2);transition:all 0.2s}
+.toggle input:checked + .toggle-track{background:rgba(74,222,128,0.25);border-color:var(--green)}
+.toggle input:checked + .toggle-track::after{left:21px;background:var(--green)}
+.s-input{background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.12);
+  border-radius:8px;padding:0.4rem 0.8rem;color:var(--text);font-family:'Nunito',sans-serif;
+  font-size:0.85rem;outline:none;width:160px;transition:border-color 0.2s;}
+.s-input:focus{border-color:var(--green)}
+.save-btn{background:linear-gradient(135deg,#16a34a,#4ade80);color:#061009;
+  padding:0.55rem 1.4rem;border-radius:10px;font-weight:800;font-size:0.85rem;
+  border:none;cursor:pointer;margin-top:1rem;font-family:'Nunito',sans-serif;transition:opacity 0.2s;}
+.save-btn:hover{opacity:0.88}
+
+/* TOAST */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;
+  background:#0d2e14;border:1px solid rgba(74,222,128,0.3);color:var(--green);
+  padding:0.65rem 1.2rem;border-radius:10px;font-weight:700;font-size:0.83rem;
+  z-index:800;transform:translateY(80px);transition:transform 0.3s ease;opacity:0;}
+.toast.show{transform:translateY(0);opacity:1}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">HyriseSMP</div>
+    <div class="login-sub">Admin Panel — Login untuk melanjutkan</div>
+    <div class="login-field">
+      <label>Username Admin</label>
+      <input type="text" id="loginUser" placeholder="admin" value="admin">
+    </div>
+    <div class="login-field">
+      <label>Password</label>
+      <input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="login-err" id="loginErr">❌ Username atau password salah!</div>
+    <button class="btn-login" onclick="doLogin()">Masuk ke Admin Panel</button>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="s-logo">HyriseSMP</div>
+  <div class="s-sub">⚙️ Admin Panel</div>
+
+  <div class="s-section">Utama</div>
+  <ul class="s-nav">
+    <li><a href="#" class="active" onclick="showPage('dashboard',this)"><span class="icon">📊</span> Dashboard</a></li>
+    <li><a href="#" onclick="showPage('orders',this)"><span class="icon">📋</span> Pesanan</a></li>
+    <li><a href="#" onclick="showPage('products',this)"><span class="icon">🛒</span> Produk</a></li>
+  </ul>
+
+  <div class="s-section">Sistem</div>
+  <ul class="s-nav">
+    <li><a href="#" onclick="showPage('delivery',this)"><span class="icon">🚀</span> Log Pengiriman</a></li>
+    <li><a href="#" onclick="showPage('settings',this)"><span class="icon">⚙️</span> Pengaturan</a></li>
+  </ul>
+
+  <div class="sidebar-foot">
+    <div class="admin-badge">
+      <div class="av">A</div>
+      <div><div class="av-name">Admin</div><div class="av-role">Super Admin</div></div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">🚪 Keluar</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-title">Dashboard</div>
+    <div class="page-sub" id="dashTime">Memuat data...</div>
+
+    <div class="stats-grid">
+      <div class="stat">
+        <div class="stat-label">Total Pendapatan</div>
+        <div class="stat-val" id="statRevenue" style="color:var(--gold)">Rp 0</div>
+        <div class="stat-change up" id="statRevenueChange">+0 hari ini</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Total Pesanan</div>
+        <div class="stat-val" id="statOrders">0</div>
+        <div class="stat-change up" id="statOrdersToday">0 hari ini</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Terkirim Otomatis</div>
+        <div class="stat-val" id="statDelivered" style="color:var(--green)">0</div>
+        <div class="stat-change neu">auto-delivery</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Menunggu</div>
+        <div class="stat-val" id="statPending" style="color:var(--gold)">0</div>
+        <div class="stat-change neu">perlu tindakan</div>
+      </div>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="chart-title">📈 Pendapatan 7 Hari Terakhir</div>
+      <div class="bar-chart" id="revenueChart"></div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-head">
+        <div class="table-title">⚡ Pesanan Terbaru</div>
+        <div class="table-actions">
+          <button class="t-btn" onclick="showPage('orders',document.querySelector('.s-nav li:nth-child(2) a'))">Lihat Semua</button>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Order ID</th><th>Username</th><th>Item</th><th>Total</th><th>Status</th><th>Waktu</th></tr></thead>
+        <tbody id="recentOrders"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ORDERS -->
+  <div class="page" id="page-orders">
+    <div class="page-title">Manajemen Pesanan</div>
+    <div class="page-sub">Kelola dan pantau semua transaksi pembelian</div>
+
+    <div class="table-wrap">
+      <div class="table-head">
+        <div class="table-title">📋 Semua Pesanan</div>
+        <div class="table-actions">
+          <input class="search-inp" type="text" placeholder="Cari username/order..." oninput="filterOrders(this.value)" id="orderSearch">
+          <button class="t-btn" onclick="refreshOrders()">🔄 Refresh</button>
+          <button class="t-btn red" onclick="clearOrders()">🗑️ Hapus Semua</button>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Order ID</th><th>Username</th><th>Item</th><th>Total</th><th>Metode</th><th>Status</th><th>Waktu</th><th>Aksi</th></tr></thead>
+        <tbody id="allOrders"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PRODUCTS -->
+  <div class="page" id="page-products">
+    <div class="page-title">Manajemen Produk</div>
+    <div class="page-sub">Kelola item yang dijual di store</div>
+    <div class="prod-grid" id="prodGrid"></div>
+  </div>
+
+  <!-- DELIVERY LOG -->
+  <div class="page" id="page-delivery">
+    <div class="page-title">Log Pengiriman Otomatis</div>
+    <div class="page-sub">Riwayat perintah yang dikirim ke server Minecraft</div>
+
+    <div class="table-wrap" style="margin-bottom:1.5rem">
+      <div class="table-head">
+        <div class="table-title">🚀 Perintah Server (Simulasi)</div>
+        <div class="table-actions">
+          <button class="t-btn" onclick="refreshDelivery()">🔄 Refresh</button>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Waktu</th><th>Order ID</th><th>Username</th><th>Perintah</th><th>Status</th></tr></thead>
+        <tbody id="deliveryLog"></tbody>
+      </table>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="chart-title">💻 Konsol Server (Live)</div>
+      <div class="cmd-box" id="serverConsole">
+        <span class="cmd-line" style="color:#6b9070">[HyriseSMP] Server dimulai...</span>
+        <span class="cmd-line" style="color:#6b9070;animation-delay:0.3s">[HyriseSMP] Plugin AutoDelivery v2.1 aktif</span>
+        <span class="cmd-line" style="color:#6b9070;animation-delay:0.6s">[HyriseSMP] Menunggu pesanan masuk...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="page" id="page-settings">
+    <div class="page-title">Pengaturan</div>
+    <div class="page-sub">Konfigurasi sistem Hyrise SMP</div>
+
+    <div class="settings-grid">
+      <div class="setting-card">
+        <div class="setting-title">⚡ Auto-Delivery</div>
+        <div class="setting-row">
+          <div><div class="sr-label">Pengiriman Otomatis</div><div class="sr-sub">Kirim item langsung setelah bayar</div></div>
+          <label class="toggle"><input type="checkbox" checked onchange="saveSetting('autoDelivery',this.checked)"><div class="toggle-track"></div></label>
+        </div>
+        <div class="setting-row">
+          <div><div class="sr-label">Notifikasi Discord</div><div class="sr-sub">Kirim notif ke webhook Discord</div></div>
+          <label class="toggle"><input type="checkbox" checked onchange="saveSetting('discordNotif',this.checked)"><div class="toggle-track"></div></label>
+        </div>
+        <div class="setting-row">
+          <div><div class="sr-label">Konfirmasi Email</div><div class="sr-sub">Kirim email konfirmasi ke pembeli</div></div>
+          <label class="toggle"><input type="checkbox" onchange="saveSetting('emailConfirm',this.checked)"><div class="toggle-track"></div></label>
+        </div>
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-title">🖥️ Koneksi Server</div>
+        <div class="setting-row">
+          <div><div class="sr-label">IP Server</div></div>
+          <input class="s-input" type="text" value="play.hyrisesmp.id" id="serverIP">
+        </div>
+        <div class="setting-row">
+          <div><div class="sr-label">RCON Port</div></div>
+          <input class="s-input" type="text" value="25575" id="rconPort">
+        </div>
+        <div class="setting-row">
+          <div><div class="sr-label">RCON Password</div></div>
+          <input class="s-input" type="password" value="••••••••" id="rconPass">
+        </div>
+        <button class="save-btn" onclick="saveServer()">💾 Simpan Perubahan</button>
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-title">💳 Pembayaran</div>
+        <div class="setting-row">
+          <div><div class="sr-label">QRIS</div></div>
+          <label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div></label>
+        </div>
+        <div class="setting-row">
+          <div><div class="sr-label">DANA</div></div>
+          <label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div></label>
+        </div>
+        <div class="setting-row">
+          <div><div class="sr-label">GoPay</div></div>
+          <label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div></label>
+        </div>
+        <div class="setting-row">
+          <div><div class="sr-label">OVO</div></div>
+          <label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div></label>
+        </div>
+        <div class="setting-row">
+          <div><div class="sr-label">Bank Transfer</div></div>
+          <label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div></label>
+        </div>
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-title">🔐 Keamanan Admin</div>
+        <div class="setting-row">
+          <div><div class="sr-label">Username Admin</div></div>
+          <input class="s-input" type="text" value="admin" id="newUser">
+        </div>
+        <div class="setting-row">
+          <div><div class="sr-label">Password Baru</div></div>
+          <input class="s-input" type="password" placeholder="Password baru" id="newPass">
+        </div>
+        <button class="save-btn" onclick="saveCredentials()">🔐 Update Kredensial</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ORDER DETAIL MODAL -->
+<div class="detail-modal" id="detailModal">
+  <div class="detail-box">
+    <div class="detail-head">
+      <div class="detail-title" id="detailOrderId">Order Detail</div>
+      <button class="detail-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="detail-body" id="detailBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="adminToast"></div>
+
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://bzgfuivhbomwazkxxiiy.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_jh6wrhABjLJ5wxFc5t-7cA_UtphsYrE';
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
+
+<script>
+// ===== STATE =====
+let currentOrders = [];
+let adminUser = 'moderator';
+let adminPass = 'kocheng._';
+
+const products = [
+  {id:'rank-akar',name:'Rank Akar',icon:'🌿',price:15000,type:'rank',cmd:'lp user {user} parent set akar'},
+  {id:'rank-api',name:'Rank Api',icon:'🔥',price:35000,type:'rank',cmd:'lp user {user} parent set api'},
+  {id:'rank-petir',name:'Rank Petir',icon:'⚡',price:65000,type:'rank',cmd:'lp user {user} parent set petir'},
+  {id:'key-kayu',name:'Key Kayu',icon:'🗝️',price:5000,type:'key',cmd:'give {user} minecraft:tripwire_hook{display:{Name:\'"Key Kayu"\'}} 1'},
+  {id:'key-kristal',name:'Key Kristal',icon:'💎',price:20000,type:'key',cmd:'give {user} minecraft:amethyst_shard{display:{Name:\'"Key Kristal"\'}} 1'},
+  {id:'key-royal',name:'Key Royal',icon:'👑',price:45000,type:'key',cmd:'give {user} minecraft:nether_star{display:{Name:\'"Key Royal"\'}} 1'},
+  {id:'coin-10k',name:'Koin 10.000',icon:'🪙',price:10000,type:'item',cmd:'eco give {user} 10000'},
+  {id:'extra-home',name:'Extra Home +5',icon:'🏡',price:12000,type:'item',cmd:'perm user {user} add essentials.sethome.multiple.15'},
+  {id:'starter-pack',name:'Starter Pack',icon:'🎒',price:25000,type:'item',cmd:'kit give {user} starter'},
+  {id:'custom-tag',name:'Custom Tag',icon:'💬',price:20000,type:'misc',cmd:'tag setcustom {user} &a[Custom]'},
+  {id:'nick-warna',name:'Nick Warna',icon:'🎨',price:15000,type:'misc',cmd:'nick {user} &a{user}'},
+  {id:'bundle-vip',name:'Bundle VIP',icon:'🌟',price:85000,type:'misc',cmd:'lp user {user} parent set api && kit give {user} vip'},
+];
+
+// ===== LOGIN =====
+function doLogin() {
+  const u = document.getElementById('loginUser').value;
+  const p = document.getElementById('loginPass').value;
+  if (u === adminUser && p === adminPass) {
+    document.getElementById('loginScreen').style.display = 'none';
+    refreshAll();
+  } else {
+    document.getElementById('loginErr').style.display = 'block';
+  }
+}
+
+function doLogout() {
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginErr').style.display = 'none';
+}
+
+// ===== NAV =====
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.s-nav a').forEach(a => a.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (el) el.classList.add('active');
+  if (id === 'dashboard') refreshDashboard();
+  if (id === 'orders') refreshOrders();
+  if (id === 'products') renderProducts();
+  if (id === 'delivery') refreshDelivery();
+}
+
+// ===== DATA (Supabase) =====
+let _cachedOrders = [];
+
+function getOrders() { return _cachedOrders; }
+
+async function loadOrdersFromSupabase() {
+  const { data, error } = await _sb.from('orders').select('*').order('created_at', { ascending: false });
+  if (error) { console.error('[Hyrise Admin] Gagal load:', error); return; }
+  _cachedOrders = (data || []).map(o => ({
+    ...o,
+    id: o.order_id,
+    dateStr: o.date_str,
+    itemDetails: o.item_details,
+    _rowId: o.id
+  }));
+  refreshAll();
+}
+
+function startRealtimeListener() {
+  _sb.channel('orders-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+      loadOrdersFromSupabase();
+    })
+    .subscribe();
+  loadOrdersFromSupabase();
+}
+
+async function saveOrderStatus(rowId, status) {
+  await _sb.from('orders').update({ status }).eq('id', rowId);
+}
+
+async function deleteOrderFromSupabase(rowId) {
+  await _sb.from('orders').delete().eq('id', rowId);
+}
+
+function fmt(n) { return 'Rp ' + n.toLocaleString('id-ID'); }
+
+function statusBadge(s) {
+  const map = {
+    delivered: ['✅ Terkirim','status-delivered'],
+    processing: ['⏳ Proses','status-processing'],
+    pending: ['🕐 Pending','status-pending'],
+    failed: ['❌ Gagal','status-failed'],
+  };
+  const [label, cls] = map[s] || ['❓ Unknown','status-pending'];
+  return `<span class="status-badge ${cls}">${label}</span>`;
+}
+
+// ===== DASHBOARD =====
+function refreshDashboard() {
+  const now = new Date();
+  document.getElementById('dashTime').textContent =
+    'Update: ' + now.toLocaleDateString('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}) +
+    ' ' + now.toLocaleTimeString('id-ID');
+
+  const orders = getOrders();
+  const today = new Date().toDateString();
+  const todayOrders = orders.filter(o => new Date(o.date).toDateString() === today);
+  const delivered = orders.filter(o => o.status === 'delivered');
+  const pending = orders.filter(o => o.status !== 'delivered');
+  const total = orders.reduce((s, o) => s + o.total, 0);
+  const todayRev = todayOrders.reduce((s, o) => s + o.total, 0);
+
+  document.getElementById('statRevenue').textContent = fmt(total);
+  document.getElementById('statRevenueChange').textContent = '+' + fmt(todayRev) + ' hari ini';
+  document.getElementById('statOrders').textContent = orders.length;
+  document.getElementById('statOrdersToday').textContent = todayOrders.length + ' hari ini';
+  document.getElementById('statDelivered').textContent = delivered.length;
+  document.getElementById('statPending').textContent = pending.length;
+
+  // Chart
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const ds = d.toDateString();
+    const rev = orders.filter(o => new Date(o.date).toDateString() === ds).reduce((s,o)=>s+o.total,0);
+    days.push({ label: d.toLocaleDateString('id-ID',{weekday:'short'}), rev });
+  }
+  const maxRev = Math.max(...days.map(d=>d.rev), 1);
+  document.getElementById('revenueChart').innerHTML = days.map(d=>`
+    <div class="bar" style="height:${Math.max((d.rev/maxRev)*100,4)}%" title="${fmt(d.rev)}">
+      <span class="bar-val">${d.rev > 0 ? fmt(d.rev) : ''}</span>
+      <span class="bar-label">${d.label}</span>
+    </div>`).join('');
+
+  // Recent orders
+  const recent = orders.slice(0, 5);
+  document.getElementById('recentOrders').innerHTML = recent.length
+    ? recent.map(o=>`<tr>
+        <td style="font-family:monospace;font-size:0.75rem;color:var(--muted2)">${o.id}</td>
+        <td><strong>${o.username}</strong></td>
+        <td style="color:var(--muted2);font-size:0.78rem">${o.items.slice(0,2).join(', ')}${o.items.length>2?' +'+( o.items.length-2)+' lagi':''}</td>
+        <td style="color:var(--gold);font-weight:700">${fmt(o.total)}</td>
+        <td>${statusBadge(o.status)}</td>
+        <td style="color:var(--muted2);font-size:0.75rem">${o.dateStr || '-'}</td>
+      </tr>`).join('')
+    : '<tr class="empty-row"><td colspan="6">Belum ada pesanan. Pesanan dari store akan muncul di sini.</td></tr>';
+}
+
+// ===== ORDERS =====
+function refreshOrders() {
+  currentOrders = getOrders();
+  renderOrderTable(currentOrders);
+}
+
+function filterOrders(q) {
+  const filtered = q
+    ? currentOrders.filter(o =>
+        o.username.toLowerCase().includes(q.toLowerCase()) ||
+        o.id.toLowerCase().includes(q.toLowerCase()) ||
+        o.items.join(' ').toLowerCase().includes(q.toLowerCase()))
+    : currentOrders;
+  renderOrderTable(filtered);
+}
+
+function renderOrderTable(orders) {
+  document.getElementById('allOrders').innerHTML = orders.length
+    ? orders.map(o=>`<tr>
+        <td style="font-family:monospace;font-size:0.72rem;color:var(--muted2)">${o.id}</td>
+        <td><strong>${o.username}</strong></td>
+        <td style="font-size:0.78rem;color:var(--muted2);max-width:150px">${o.items.slice(0,2).join(', ')}${o.items.length>2?' +more':''}</td>
+        <td style="color:var(--gold);font-weight:700">${fmt(o.total)}</td>
+        <td><span class="type-badge">${o.payment}</span></td>
+        <td>${statusBadge(o.status)}</td>
+        <td style="color:var(--muted2);font-size:0.73rem">${o.dateStr||'-'}</td>
+        <td><button class="t-btn" style="font-size:0.72rem;padding:0.25rem 0.6rem" onclick="openDetail('${o.id}')">Detail</button></td>
+      </tr>`).join('')
+    : '<tr class="empty-row"><td colspan="8">Tidak ada pesanan ditemukan.</td></tr>';
+}
+
+async function clearOrders() {
+  if (!confirm('Hapus semua pesanan? Tindakan ini tidak dapat dibatalkan.')) return;
+  const orders = getOrders();
+  for (const o of orders) {
+    if (o._rowId) await deleteOrderFromSupabase(o._rowId);
+  }
+  showToast('🗑️ Semua pesanan dihapus');
+}
+
+// ===== ORDER DETAIL =====
+function openDetail(id) {
+  const o = getOrders().find(x => x.id === id);
+  if (!o) return;
+  document.getElementById('detailOrderId').textContent = '📋 ' + o.id;
+  const cmds = generateCommands(o);
+  document.getElementById('detailBody').innerHTML = `
+    <div class="d-row"><span>Username</span><span>${o.username}</span></div>
+    <div class="d-row"><span>Email</span><span>${o.email}</span></div>
+    <div class="d-row"><span>Item</span><span>${o.items.join(', ')}</span></div>
+    <div class="d-row"><span>Total</span><span style="color:var(--gold)">${fmt(o.total)}</span></div>
+    <div class="d-row"><span>Metode</span><span>${o.payment}</span></div>
+    <div class="d-row"><span>Status</span><span>${statusBadge(o.status)}</span></div>
+    <div class="d-row"><span>Tanggal</span><span>${o.dateStr}</span></div>
+    <div style="margin-top:1rem;font-size:0.75rem;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.4rem">Perintah Server</div>
+    <div class="cmd-box">${cmds.map(c=>`<span class="cmd-line">&gt; ${c}</span>`).join('')}</div>
+    <div class="d-actions">
+      <button class="d-actions-btn btn-deliver" onclick="manualDeliver('${id}')">🚀 Kirim Manual</button>
+      <button class="d-actions-btn btn-resend" onclick="resendOrder('${id}')">🔄 Kirim Ulang</button>
+      <button class="d-actions-btn btn-refund" onclick="refundOrder('${id}')">↩️ Refund</button>
+    </div>`;
+  // fix button styles inline since class won't work from innerHTML
+  const btns = document.querySelectorAll('.d-actions-btn');
+  btns.forEach(b=>{b.style.flex='1';b.style.padding='0.6rem';b.style.borderRadius='10px';
+    b.style.fontWeight='700';b.style.fontSize='0.8rem';b.style.cursor='pointer';b.style.fontFamily="'Nunito',sans-serif";});
+  document.getElementById('detailModal').classList.add('open');
+}
+
+function closeDetail() { document.getElementById('detailModal').classList.remove('open'); }
+
+function generateCommands(order) {
+  const cmds = [];
+  (order.itemDetails || []).forEach(item => {
+    const prod = products.find(p => p.id === item.id);
+    if (prod) cmds.push(prod.cmd.replace(/\{user\}/g, order.username));
+  });
+  if (cmds.length === 0) cmds.push('# Perintah tidak ditemukan untuk item ini');
+  return cmds;
+}
+
+function manualDeliver(id) {
+  const o = getOrders().find(x => x.id === id || x.order_id === id);
+  if (!o) return;
+  saveOrderStatus(o._rowId, 'delivered');
+  closeDetail();
+  addConsoleLog(o);
+  showToast('✅ Pesanan ' + id + ' ditandai terkirim');
+}
+
+function resendOrder(id) {
+  const o = getOrders().find(x => x.id === id || x.order_id === id);
+  addConsoleLog(o);
+  showToast('🔄 Perintah dikirim ulang ke server');
+  closeDetail();
+}
+
+function refundOrder(id) {
+  const o = getOrders().find(x => x.id === id || x.order_id === id);
+  if (!o) return;
+  saveOrderStatus(o._rowId, 'failed');
+  closeDetail();
+  showToast('↩️ Pesanan di-refund');
+}
+
+// ===== PRODUCTS =====
+function renderProducts() {
+  const orders = getOrders();
+  document.getElementById('prodGrid').innerHTML = products.map(p => {
+    const sales = orders.filter(o => o.itemDetails && o.itemDetails.some(i => i.id === p.id)).length;
+    return `<div class="prod-card">
+      <div class="prod-icon">${p.icon}</div>
+      <div class="prod-info">
+        <div class="prod-name">${p.name}</div>
+        <div class="prod-price">${fmt(p.price)}</div>
+        <div class="prod-sales">${sales} terjual</div>
+        <div class="prod-actions">
+          <button class="pa-btn" onclick="showToast('Edit produk: ${p.name}')">✏️ Edit</button>
+          <button class="pa-btn del" onclick="showToast('⚠️ Hapus memerlukan konfirmasi')">🗑️</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== DELIVERY LOG =====
+function refreshDelivery() {
+  const orders = getOrders().filter(o => o.status === 'delivered');
+  document.getElementById('deliveryLog').innerHTML = orders.length
+    ? orders.map(o => {
+        const cmds = generateCommands(o);
+        return cmds.map(cmd => `<tr>
+          <td style="font-size:0.73rem;color:var(--muted2)">${o.dateStr}</td>
+          <td style="font-family:monospace;font-size:0.72rem;color:var(--muted2)">${o.id}</td>
+          <td><strong>${o.username}</strong></td>
+          <td style="font-family:monospace;font-size:0.72rem;color:var(--green);max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cmd}</td>
+          <td><span class="status-badge status-delivered">✅ OK</span></td>
+        </tr>`).join('');
+      }).join('')
+    : '<tr class="empty-row"><td colspan="5">Belum ada log pengiriman. Selesaikan pesanan untuk melihat log.</td></tr>';
+}
+
+function addConsoleLog(order) {
+  if (!order) return;
+  const box = document.getElementById('serverConsole');
+  const cmds = generateCommands(order);
+  cmds.forEach((cmd, i) => {
+    setTimeout(() => {
+      const line = document.createElement('span');
+      line.className = 'cmd-line';
+      line.style.color = '#4ade80';
+      line.textContent = '[RCON] > ' + cmd;
+      box.appendChild(line);
+      box.scrollTop = box.scrollHeight;
+    }, i * 400);
+  });
+  setTimeout(() => {
+    const ok = document.createElement('span');
+    ok.className = 'cmd-line';
+    ok.style.color = '#86efac';
+    ok.textContent = '[RCON] ✓ Berhasil dikirim ke ' + order.username;
+    box.appendChild(ok);
+    box.scrollTop = box.scrollHeight;
+  }, cmds.length * 400 + 200);
+}
+
+// ===== SETTINGS =====
+function saveSetting(key, val) { showToast('✅ Pengaturan "' + key + '" disimpan'); }
+function saveServer() { showToast('💾 Konfigurasi server disimpan!'); }
+function saveCredentials() {
+  const u = document.getElementById('newUser').value;
+  const p = document.getElementById('newPass').value;
+  if (!u || !p) { showToast('⚠️ Username & password wajib diisi!'); return; }
+  adminUser = u; adminPass = p;
+  showToast('🔐 Kredensial berhasil diperbarui! (berlaku sampai halaman di-refresh)');
+}
+
+// ===== UTILS =====
+function showToast(msg) {
+  const t = document.getElementById('adminToast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function refreshAll() {
+  refreshDashboard();
+  renderProducts();
+}
+
+// Init — load dari Supabase + aktifkan realtime
+startRealtimeListener();
+
+// Auto refresh dashboard setiap 5s
+setInterval(() => {
+  if (document.getElementById('page-dashboard').classList.contains('active')) refreshDashboard();
+}, 5000);
+</script>
+</body>
+</html>
