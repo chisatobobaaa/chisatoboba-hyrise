@@ -541,10 +541,16 @@ const genOrderId = () => 'HRS-' + Date.now().toString(36).toUpperCase();
 
 // Load settings dari Supabase
 async function loadSettings() {
-  const { data } = await _sb.from('settings').select('*').eq('key', 'server_ip').single();
-  if (data && data.value) {
-    _serverIP = data.value;
-    document.getElementById('serverIPDisplay').textContent = _serverIP;
+  try {
+    const { data } = await _sb.from('settings').select('*').eq('key', 'server_ip');
+    if (data && data.length > 0 && data[0].value) {
+      _serverIP = data[0].value;
+      const el = document.getElementById('serverIPDisplay');
+      if (el) el.textContent = _serverIP;
+    }
+  } catch(e) {
+    // settings tabel belum ada, pakai default
+    console.warn('[Hyrise] Settings tidak ditemukan, pakai default IP');
   }
 }
 loadSettings();
