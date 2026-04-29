@@ -228,7 +228,6 @@ tbody tr:hover{background:rgba(74,222,128,0.025)}
     </div>
     <div class="login-err" id="loginErr">❌ Username atau password salah!</div>
     <button class="btn-login" onclick="doLogin()">Masuk ke Admin Panel</button>
-    <div class="login-hint">Default: admin / hyrise2025</div>
   </div>
 </div>
 
@@ -468,8 +467,8 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 <script>
 // ===== STATE =====
 let currentOrders = [];
-let adminUser = 'admin';
-let adminPass = 'hyrise2025';
+let adminUser = 'moderator';
+let adminPass = 'kocheng._';
 
 const products = [
   {id:'rank-akar',name:'Rank Akar',icon:'🌿',price:15000,type:'rank',cmd:'lp user {user} parent set akar'},
