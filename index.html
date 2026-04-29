@@ -648,9 +648,14 @@ const EMAIL_CONFIG = {
   serverIp:   'furina.nexuscloud.id',
   discord:    'discord.gg/hyrisesmp'
 };
-(function(){
-  if (typeof emailjs !== 'undefined') emailjs.init({ publicKey: EMAIL_CONFIG.publicKey });
-})();
+window.addEventListener('load', function() {
+  if (typeof emailjs !== 'undefined') {
+    emailjs.init({ publicKey: EMAIL_CONFIG.publicKey });
+    console.log('[Hyrise] EmailJS initialized');
+  } else {
+    console.warn('[Hyrise] EmailJS SDK tidak ter-load!');
+  }
+});
 
 function buildSaweriaUrl(order) {
   const nominal = order.total;
@@ -769,8 +774,13 @@ function openDiscord() {
 }
 
 async function sendDeliveryEmail(order) {
-  if (typeof emailjs === 'undefined') return;
+  if (typeof emailjs === 'undefined') {
+    console.error('[Hyrise] EmailJS tidak tersedia!');
+    return;
+  }
   try {
+    emailjs.init({ publicKey: EMAIL_CONFIG.publicKey });
+    console.log('[Hyrise] Mengirim email ke', order.email, '...');
     await emailjs.send(EMAIL_CONFIG.serviceId, EMAIL_CONFIG.templateId, {
       to_email:    order.email,
       to_name:     order.username,
