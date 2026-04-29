@@ -228,6 +228,7 @@ tbody tr:hover{background:rgba(74,222,128,0.025)}
     </div>
     <div class="login-err" id="loginErr">❌ Username atau password salah!</div>
     <button class="btn-login" onclick="doLogin()">Masuk ke Admin Panel</button>
+    <div class="login-hint">Default: admin / hyrise2025</div>
   </div>
 </div>
 
@@ -467,8 +468,8 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 <script>
 // ===== STATE =====
 let currentOrders = [];
-let adminUser = 'moderator';
-let adminPass = 'kocheng._';
+let adminUser = 'admin';
+let adminPass = 'hyrise2025';
 
 const products = [
   {id:'rank-akar',name:'Rank Akar',icon:'🌿',price:15000,type:'rank',cmd:'lp user {user} parent set akar'},
@@ -523,11 +524,18 @@ async function loadOrdersFromSupabase() {
   const { data, error } = await _sb.from('orders').select('*').order('created_at', { ascending: false });
   if (error) { console.error('[Hyrise Admin] Gagal load:', error); return; }
   _cachedOrders = (data || []).map(o => ({
-    ...o,
-    id: o.order_id,
-    dateStr: o.date_str,
-    itemDetails: o.item_details,
-    _rowId: o.id
+    _rowId:      o.id,
+    id:          o.order_id || o.id,
+    order_id:    o.order_id,
+    username:    o.username,
+    email:       o.email,
+    items:       Array.isArray(o.items) ? o.items : [],
+    itemDetails: o.item_details || [],
+    total:       o.total || 0,
+    payment:     o.payment,
+    status:      o.status || 'pending',
+    date:        o.date,
+    dateStr:     o.date_str,
   }));
   refreshAll();
 }
@@ -779,8 +787,31 @@ function addConsoleLog(order) {
 }
 
 // ===== SETTINGS =====
+async function loadSettings() {
+  const { data } = await _sb.from('settings').select('*');
+  if (!data) return;
+  data.forEach(row => {
+    if (row.key === 'server_ip' && document.getElementById('serverIP'))
+      document.getElementById('serverIP').value = row.value;
+    if (row.key === 'rcon_port' && document.getElementById('rconPort'))
+      document.getElementById('rconPort').value = row.value;
+  });
+}
+
+async function upsertSetting(key, value) {
+  await _sb.from('settings').upsert({ key, value }, { onConflict: 'key' });
+}
+
 function saveSetting(key, val) { showToast('✅ Pengaturan "' + key + '" disimpan'); }
-function saveServer() { showToast('💾 Konfigurasi server disimpan!'); }
+
+async function saveServer() {
+  const ip   = document.getElementById('serverIP').value.trim();
+  const port = document.getElementById('rconPort').value.trim();
+  if (!ip) { showToast('⚠️ IP Server tidak boleh kosong!'); return; }
+  await upsertSetting('server_ip', ip);
+  await upsertSetting('rcon_port', port);
+  showToast('💾 Konfigurasi server disimpan!');
+}
 function saveCredentials() {
   const u = document.getElementById('newUser').value;
   const p = document.getElementById('newPass').value;
@@ -804,6 +835,7 @@ function refreshAll() {
 
 // Init — load dari Supabase + aktifkan realtime
 startRealtimeListener();
+loadSettings();
 
 // Auto refresh dashboard setiap 5s
 setInterval(() => {
