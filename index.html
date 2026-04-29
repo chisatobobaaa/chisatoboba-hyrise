@@ -475,15 +475,21 @@ h1{font-family:'Cinzel',serif;font-size:clamp(2rem,5vw,4rem);font-weight:900;
       <div class="order-summary" id="orderSummary"></div>
       <div class="field">
         <label>Metode Pembayaran</label>
-        <div class="payment-methods" style="grid-template-columns:repeat(3,1fr)">
-          <div class="pm sel" onclick="selectPM(this,'QRIS')"><div class="pm-icon">📱</div><div class="pm-name">QRIS</div></div>
-          <div class="pm" onclick="selectPM(this,'DANA')"><div class="pm-icon" style="font-size:1rem;font-weight:800;color:#118EEA;letter-spacing:-0.5px">DANA</div><div class="pm-name">DANA</div></div>
-          <div class="pm" onclick="selectPM(this,'GoPay')"><div class="pm-icon">💚</div><div class="pm-name">GoPay</div></div>
-          <div class="pm" onclick="selectPM(this,'OVO')"><div class="pm-icon">💜</div><div class="pm-name">OVO</div></div>
-          <div class="pm" onclick="selectPM(this,'Transfer')"><div class="pm-icon">🏦</div><div class="pm-name">Bank Transfer</div></div>
+        <div class="saweria-info" style="background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.25);border-radius:12px;padding:0.9rem 1.1rem;display:flex;align-items:center;gap:12px;">
+          <div style="font-size:2rem;flex-shrink:0">💳</div>
+          <div>
+            <div style="font-weight:800;font-size:0.9rem;color:#fbbf24">Saweria</div>
+            <div style="font-size:0.75rem;color:var(--muted2);margin-top:2px">QRIS · GoPay · OVO · DANA · Bank Transfer</div>
+            <div style="font-size:0.72rem;color:var(--muted);margin-top:1px">Kamu akan diarahkan ke halaman Saweria untuk bayar</div>
+          </div>
+        </div>
+        <div style="margin-top:0.7rem;padding:0.6rem 0.9rem;background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.1);border-radius:8px;font-size:0.75rem;color:var(--muted2);">
+          ℹ️ Setelah bayar di Saweria, screenshot bukti transfer & kirim ke Discord kami. Admin akan konfirmasi & kirim item dalam <strong style="color:var(--text)">max 5 menit</strong>.
         </div>
       </div>
-      <button class="btn-pay" onclick="processPayment()">💳 Bayar Sekarang</button>
+      <button class="btn-pay" onclick="processPayment()" style="background:linear-gradient(135deg,#b45309,#fbbf24);color:#1a0800;">
+        💳 Lanjut Bayar via Saweria →
+      </button>
     </div>
   </div>
 </div>
@@ -491,22 +497,29 @@ h1{font-family:'Cinzel',serif;font-size:clamp(2rem,5vw,4rem);font-weight:900;
 <!-- SUCCESS MODAL -->
 <div class="success-modal" id="successModal">
   <div class="success-box">
-    <div class="success-icon">✅</div>
-    <div class="success-title">Pembayaran Berhasil!</div>
-    <div class="success-sub">Pesananmu sedang diproses dan akan <strong>langsung dikirim otomatis</strong> ke akunmu dalam beberapa detik.</div>
+    <div class="success-icon">⏳</div>
+    <div class="success-title">Pesanan Tercatat!</div>
+    <div class="success-sub">Selesaikan pembayaran di Saweria, lalu kirim <strong>screenshot bukti bayar</strong> ke Discord kami. Admin akan verifikasi &amp; kirim item ke akun Minecraft kamu.</div>
     <div class="order-details" id="orderDetails"></div>
     <div class="delivery-status">
-      <div class="ds-dot"></div>
-      <div class="ds-text" id="deliveryStatus">Mengirim item ke server...</div>
+      <div class="ds-dot" style="background:var(--gold);box-shadow:0 0 8px rgba(251,191,36,0.5)"></div>
+      <div class="ds-text" id="deliveryStatus">Menunggu konfirmasi pembayaran dari admin...</div>
     </div>
-    <button class="btn-close-success" onclick="closeSuccess()">Kembali ke Store</button>
+    <div style="display:flex;gap:0.6rem;margin-top:1.2rem;flex-wrap:wrap">
+      <button class="btn-close-success" id="saweriaBtnMain" style="flex:2;background:linear-gradient(135deg,#b45309,#fbbf24);color:#1a0800;font-size:0.9rem;" onclick="openSaweriaFromSuccess()">
+        💳 Bayar di Saweria →
+      </button>
+      <button class="btn-close-success" onclick="openDiscord()" style="flex:1;background:rgba(88,101,242,0.15);color:#a5b4fc;border:1px solid rgba(88,101,242,0.3);font-size:0.82rem;">
+        📣 Discord
+      </button>
+    </div>
+    <button class="btn-close-success" onclick="closeSuccess()" style="margin-top:0.5rem;background:transparent;color:var(--muted2);border:1px solid rgba(74,222,128,0.1);font-size:0.8rem;">
+      Kembali ke Store
+    </button>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
-
-<!-- EmailJS SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
 <!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -518,28 +531,9 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 <script>
 // ============================================================
-// KONFIGURASI EMAIL — Isi dengan data EmailJS kamu
-// Daftar gratis di: https://www.emailjs.com
-// ============================================================
-const EMAIL_CONFIG = {
-  serviceId:  'YOUR_SERVICE_ID',   // ← Ganti dengan Service ID EmailJS
-  templateId: 'YOUR_TEMPLATE_ID',  // ← Ganti dengan Template ID EmailJS
-  publicKey:  'YOUR_PUBLIC_KEY',   // ← Ganti dengan Public Key EmailJS
-  fromName:   'Hyrise SMP',
-  serverName: 'Hyrise SMP',
-  serverIp:   'play.hyrisesmp.id',
-  discord:    'discord.gg/hyrisesmp'
-};
-
-// Inisialisasi EmailJS
-(function(){
-  if(typeof emailjs !== 'undefined') emailjs.init({ publicKey: EMAIL_CONFIG.publicKey });
-})();
-
-// ============================================================
+// KONFIGURASI SAWERIA
 
 let cart = [];
-let selectedPM = 'QRIS';
 let _serverIP = 'play.hyrisesmp.id';
 
 const fmt = n => 'Rp ' + n.toLocaleString('id-ID');
@@ -627,105 +621,125 @@ function selectPM(el, pm) {
   selectedPM = pm;
 }
 
+// ============================================================
+// KONFIGURASI SAWERIA
+// ============================================================
+const SAWERIA_USERNAME = 'hyrisesmpreborn';
+const DISCORD_URL = 'https://discord.gg/hyrisesmp';
+
+function buildSaweriaUrl(order) {
+  const nominal = order.total;
+  const itemList = order.items.join(', ');
+  // Saweria URL format: saweria.co/USERNAME?amount=NOMINAL&message=PESAN
+  const pesan = encodeURIComponent(`[HyriseSMP] ${order.order_id} | IGN: ${order.username} | ${itemList}`);
+  return `https://saweria.co/${SAWERIA_USERNAME}?amount=${nominal}&message=${pesan}`;
+}
+
+// Simpan saweria URL sementara untuk dipakai di success modal
+let _currentSaweriaUrl = '';
+let _currentOrder = null;
+
 async function processPayment() {
   const username = document.getElementById('mcUsername').value.trim();
   const email = document.getElementById('emailInput').value.trim();
   if (!username) { showToast('⚠️ Masukkan username Minecraft kamu!'); return; }
   if (!email) { showToast('⚠️ Masukkan email kamu!'); return; }
 
+  const btn = document.querySelector('.btn-pay');
+  btn.textContent = '⏳ Menyimpan pesanan...';
+  btn.disabled = true;
+
   const orderId = genOrderId();
   const total = cart.reduce((s, i) => s + i.price, 0);
   const items = [...cart];
   const now = new Date();
 
+  const itemNames = items.map(i => i.name);
+  const dateStr = now.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+
+  // newOrder dipakai di UI (boleh pakai array native)
   const newOrder = {
     order_id: orderId,
     username, email,
-    items: items.map(i => i.name),
+    items: itemNames,
     item_details: items,
-    total, payment: selectedPM,
+    total,
+    payment: 'Saweria',
     status: 'pending',
     date: now.toISOString(),
-    date_str: now.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})
+    date_str: dateStr
   };
 
-  // Simpan ke Supabase
-  const { data, error } = await _sb.from('orders').insert([newOrder]).select().single();
+  // Payload ke Supabase — stringify arrays agar kompatibel kolom text/jsonb
+  const supabasePayload = {
+    order_id:     newOrder.order_id,
+    username:     newOrder.username,
+    email:        newOrder.email,
+    items:        JSON.stringify(itemNames),
+    item_details: JSON.stringify(items),
+    total:        newOrder.total,
+    payment:      newOrder.payment,
+    status:       newOrder.status,
+    date:         newOrder.date,
+    date_str:     newOrder.date_str,
+  };
+
+  // Simpan ke Supabase dulu
+  const { data, error } = await _sb.from('orders').insert([supabasePayload]).select().single();
   if (error) {
-    console.error('[Hyrise] Gagal simpan ke Supabase:', error);
-    showToast('⚠️ Gagal menyimpan pesanan. Coba lagi.');
+    console.error('[Hyrise] Gagal simpan ke Supabase:', JSON.stringify(error));
+    showToast('⚠️ Error: ' + (error.message || error.code || 'Cek console untuk detail'));
+    btn.textContent = '💳 Lanjut Bayar via Saweria →';
+    btn.disabled = false;
     return;
   }
   newOrder._rowId = data.id;
+  _currentOrder = newOrder;
+  _currentSaweriaUrl = buildSaweriaUrl(newOrder);
 
   closeCheckout();
   showSuccess(newOrder);
+
+  btn.textContent = '💳 Lanjut Bayar via Saweria →';
+  btn.disabled = false;
 }
 
 async function showSuccess(order) {
   document.getElementById('orderDetails').innerHTML = `
-    <div class="od-row"><span>Order ID</span><span>${order.order_id}</span></div>
+    <div class="od-row"><span>Order ID</span><span style="color:var(--gold)">${order.order_id}</span></div>
     <div class="od-row"><span>Username</span><span>${order.username}</span></div>
     <div class="od-row"><span>Item</span><span>${order.items.join(', ')}</span></div>
-    <div class="od-row"><span>Total</span><span>${fmt(order.total)}</span></div>
-    <div class="od-row"><span>Metode</span><span>${order.payment}</span></div>`;
+    <div class="od-row"><span>Total</span><span style="color:var(--gold);font-weight:800">${fmt(order.total)}</span></div>
+    <div class="od-row"><span>Metode</span><span>Saweria</span></div>`;
 
   document.getElementById('successModal').classList.add('open');
 
+  // Auto-redirect ke Saweria setelah 2 detik
   const statusEl = document.getElementById('deliveryStatus');
-  const steps = [
-    'Pesanan masuk ke sistem...',
-    'Menunggu konfirmasi pembayaran dari admin...',
-    '⏳ Setelah transfer, admin akan verifikasi & kirim item.',
-  ];
-  let i = 0;
-  const interval = setInterval(() => {
-    statusEl.textContent = steps[i];
-    i++;
-    if (i >= steps.length) {
-      clearInterval(interval);
-      sendDeliveryEmail(order);
-      statusEl.textContent = '✅ Pesanan tercatat! Admin akan konfirmasi setelah pembayaran diterima.';
+  let countdown = 3;
+  const btn = document.getElementById('saweriaBtnMain');
+  const tick = setInterval(() => {
+    countdown--;
+    if (btn) btn.textContent = `💳 Bayar di Saweria (${countdown}s) →`;
+    statusEl.textContent = `Mengarahkan ke Saweria dalam ${countdown} detik...`;
+    if (countdown <= 0) {
+      clearInterval(tick);
+      if (btn) btn.textContent = '💳 Bayar di Saweria →';
+      statusEl.textContent = 'Menunggu konfirmasi pembayaran dari admin...';
+      window.open(_currentSaweriaUrl, '_blank');
     }
-  }, 1200);
+  }, 1000);
 
   cart = [];
   updateCartUI();
 }
 
-async function sendDeliveryEmail(order) {
-  if (typeof emailjs === 'undefined') return;
-  if (EMAIL_CONFIG.publicKey === 'YOUR_PUBLIC_KEY') {
-    console.warn('[Hyrise] EmailJS belum dikonfigurasi. Isi EMAIL_CONFIG di script.');
-    return;
-  }
+function openSaweriaFromSuccess() {
+  if (_currentSaweriaUrl) window.open(_currentSaweriaUrl, '_blank');
+}
 
-  const itemListHtml = order.items.map(item =>
-    `<tr><td style="padding:6px 12px;border-bottom:1px solid #1a2e1c;">✦ ${item}</td></tr>`
-  ).join('');
-
-  const params = {
-    to_email:    order.email,
-    to_name:     order.username,
-    order_id:    order.id,
-    mc_username: order.username,
-    item_list:   order.items.join(', '),
-    item_list_html: itemListHtml,
-    total:       fmt(order.total),
-    payment:     order.payment,
-    date:        order.dateStr,
-    server_ip:   EMAIL_CONFIG.serverIp,
-    server_name: EMAIL_CONFIG.serverName,
-    discord_url: EMAIL_CONFIG.discord,
-    from_name:   EMAIL_CONFIG.fromName,
-  };
-
-  try {
-    await emailjs.send(EMAIL_CONFIG.serviceId, EMAIL_CONFIG.templateId, params);
-    console.log('[Hyrise] Email konfirmasi terkirim ke', order.email);
-  } catch(err) {
-    console.error('[Hyrise] Gagal kirim email:', err);
-  }
+function openDiscord() {
+  window.open(DISCORD_URL, '_blank');
 }
 
 function closeSuccess() { document.getElementById('successModal').classList.remove('open'); }
