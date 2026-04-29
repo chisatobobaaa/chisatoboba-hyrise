@@ -722,6 +722,12 @@ async function manualDeliver(id) {
 
     if (data.success) {
       await saveOrderStatus(o._rowId, 'delivered');
+      // Optimistic update: langsung update status di memory tanpa tunggu realtime
+      const cached = _cachedOrders.find(x => x._rowId === o._rowId);
+      if (cached) cached.status = 'delivered';
+      currentOrders = _cachedOrders;
+      renderOrderTable(currentOrders);
+      refreshDashboard();
       closeDetail();
       addConsoleLog(o);
       const rconOk = data.rcon.every(r => r.ok);
@@ -760,6 +766,12 @@ function refundOrder(id) {
   const o = getOrders().find(x => x.id === id || x.order_id === id);
   if (!o) return;
   saveOrderStatus(o._rowId, 'failed');
+  // Optimistic update
+  const cached = _cachedOrders.find(x => x._rowId === o._rowId);
+  if (cached) cached.status = 'failed';
+  currentOrders = _cachedOrders;
+  renderOrderTable(currentOrders);
+  refreshDashboard();
   closeDetail();
   showToast('↩️ Pesanan di-refund');
 }
