@@ -529,8 +529,8 @@ async function loadOrdersFromSupabase() {
     order_id:    o.order_id,
     username:    o.username,
     email:       o.email,
-    items:       Array.isArray(o.items) ? o.items : [],
-    itemDetails: o.item_details || [],
+    items:       Array.isArray(o.items) ? o.items : (typeof o.items === 'string' ? (() => { try { return JSON.parse(o.items); } catch(e) { return []; } })() : []),
+    itemDetails: Array.isArray(o.item_details) ? o.item_details : (typeof o.item_details === 'string' ? (() => { try { return JSON.parse(o.item_details); } catch(e) { return []; } })() : []),
     total:       o.total || 0,
     payment:     o.payment,
     status:      o.status || 'pending',
@@ -827,6 +827,7 @@ function addConsoleLog(order) {
 
 // ===== SETTINGS =====
 async function loadSettings() {
+  try {
   const { data } = await _sb.from('settings').select('*');
   if (!data) return;
   data.forEach(row => {
@@ -835,6 +836,7 @@ async function loadSettings() {
     if (row.key === 'rcon_port' && document.getElementById('rconPort'))
       document.getElementById('rconPort').value = row.value;
   });
+  } catch(e) { console.warn("[Hyrise Admin] Settings load error:", e); }
 }
 
 async function upsertSetting(key, value) {
