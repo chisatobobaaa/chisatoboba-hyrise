@@ -622,17 +622,19 @@ function refreshDashboard() {
 }
 
 // ===== ORDERS =====
-function refreshOrders() {
-  currentOrders = getOrders();
-  renderOrderTable(currentOrders);
+async function refreshOrders() {
+  showToast('🔄 Memuat ulang pesanan...');
+  await loadOrdersFromSupabase();
+  renderOrderTable(_cachedOrders);
+  currentOrders = _cachedOrders;
 }
 
 function filterOrders(q) {
   const filtered = q
     ? currentOrders.filter(o =>
-        o.username.toLowerCase().includes(q.toLowerCase()) ||
-        o.id.toLowerCase().includes(q.toLowerCase()) ||
-        o.items.join(' ').toLowerCase().includes(q.toLowerCase()))
+        (o.username||'').toLowerCase().includes(q.toLowerCase()) ||
+        (o.id||'').toLowerCase().includes(q.toLowerCase()) ||
+        (o.items||[]).join(' ').toLowerCase().includes(q.toLowerCase()))
     : currentOrders;
   renderOrderTable(filtered);
 }
@@ -640,11 +642,11 @@ function filterOrders(q) {
 function renderOrderTable(orders) {
   document.getElementById('allOrders').innerHTML = orders.length
     ? orders.map(o=>`<tr>
-        <td style="font-family:monospace;font-size:0.72rem;color:var(--muted2)">${o.id}</td>
-        <td><strong>${o.username}</strong></td>
-        <td style="font-size:0.78rem;color:var(--muted2);max-width:150px">${o.items.slice(0,2).join(', ')}${o.items.length>2?' +more':''}</td>
-        <td style="color:var(--gold);font-weight:700">${fmt(o.total)}</td>
-        <td><span class="type-badge">${o.payment}</span></td>
+        <td style="font-family:monospace;font-size:0.72rem;color:var(--muted2)">${o.id||'-'}</td>
+        <td><strong>${o.username||'-'}</strong></td>
+        <td style="font-size:0.78rem;color:var(--muted2);max-width:150px">${(o.items||[]).slice(0,2).join(', ')}${(o.items||[]).length>2?' +more':''}</td>
+        <td style="color:var(--gold);font-weight:700">${fmt(o.total||0)}</td>
+        <td><span class="type-badge">${o.payment||'-'}</span></td>
         <td>${statusBadge(o.status)}</td>
         <td style="color:var(--muted2);font-size:0.73rem">${o.dateStr||'-'}</td>
         <td><button class="t-btn" style="font-size:0.72rem;padding:0.25rem 0.6rem" onclick="openDetail('${o.id}')">Detail</button></td>
@@ -701,19 +703,56 @@ function generateCommands(order) {
   return cmds;
 }
 
-function manualDeliver(id) {
+async function manualDeliver(id) {
   const o = getOrders().find(x => x.id === id || x.order_id === id);
   if (!o) return;
-  saveOrderStatus(o._rowId, 'delivered');
-  closeDetail();
-  addConsoleLog(o);
-  showToast('✅ Pesanan ' + id + ' ditandai terkirim');
+
+  const btn = document.querySelector('.btn-deliver');
+  if (btn) { btn.textContent = '⏳ Mengirim...'; btn.disabled = true; }
+
+  const cmds = generateCommands(o);
+
+  try {
+    const res = await fetch('/api/deliver', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ commands: cmds, order: o })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      await saveOrderStatus(o._rowId, 'delivered');
+      closeDetail();
+      addConsoleLog(o);
+      const rconOk = data.rcon.every(r => r.ok);
+      showToast(rconOk
+        ? '✅ Item terkirim & email dikirim ke ' + o.email
+        : '⚠️ Terkirim tapi RCON gagal — cek koneksi server');
+    } else {
+      showToast('❌ Gagal mengirim: ' + (data.error || 'Unknown error'));
+    }
+  } catch (err) {
+    showToast('❌ Gagal koneksi ke API: ' + err.message);
+  }
+
+  if (btn) { btn.textContent = '🚀 Kirim Manual'; btn.disabled = false; }
 }
 
-function resendOrder(id) {
+async function resendOrder(id) {
   const o = getOrders().find(x => x.id === id || x.order_id === id);
-  addConsoleLog(o);
-  showToast('🔄 Perintah dikirim ulang ke server');
+  if (!o) return;
+  const cmds = generateCommands(o);
+  try {
+    await fetch('/api/deliver', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ commands: cmds, order: o })
+    });
+    addConsoleLog(o);
+    showToast('🔄 Perintah dikirim ulang ke server');
+  } catch(e) {
+    showToast('❌ Gagal kirim ulang: ' + e.message);
+  }
   closeDetail();
 }
 
