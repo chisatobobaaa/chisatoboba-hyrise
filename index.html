@@ -521,6 +521,9 @@ h1{font-family:'Cinzel',serif;font-size:clamp(2rem,5vw,4rem);font-weight:900;
 
 <div class="toast" id="toast"></div>
 
+<!-- EmailJS SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
 <!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -633,6 +636,22 @@ function selectPM(el, pm) {
 const SAWERIA_USERNAME = 'hyrisesmpreborn';
 const DISCORD_URL = 'https://discord.gg/hyrisesmp';
 
+// ============================================================
+// KONFIGURASI EMAILJS
+// ============================================================
+const EMAIL_CONFIG = {
+  serviceId:  'service_3xn0y64',
+  templateId: 'template_ivezeos',
+  publicKey:  '7OczNbLOy-JVZic5a',
+  fromName:   'Hyrise SMP',
+  serverName: 'Hyrise SMP',
+  serverIp:   'furina.nexuscloud.id',
+  discord:    'discord.gg/hyrisesmp'
+};
+(function(){
+  if (typeof emailjs !== 'undefined') emailjs.init({ publicKey: EMAIL_CONFIG.publicKey });
+})();
+
 function buildSaweriaUrl(order) {
   const nominal = order.total;
   const itemList = order.items.join(', ');
@@ -705,6 +724,7 @@ async function processPayment() {
 
   closeCheckout();
   showSuccess(newOrder);
+  sendDeliveryEmail(newOrder);
 
   btn.textContent = '💳 Lanjut Bayar via Saweria →';
   btn.disabled = false;
@@ -746,6 +766,29 @@ function openSaweriaFromSuccess() {
 
 function openDiscord() {
   window.open(DISCORD_URL, '_blank');
+}
+
+async function sendDeliveryEmail(order) {
+  if (typeof emailjs === 'undefined') return;
+  try {
+    await emailjs.send(EMAIL_CONFIG.serviceId, EMAIL_CONFIG.templateId, {
+      to_email:    order.email,
+      to_name:     order.username,
+      order_id:    order.order_id,
+      mc_username: order.username,
+      item_list:   order.items.join(', '),
+      total:       'Rp ' + Number(order.total).toLocaleString('id-ID'),
+      payment:     order.payment,
+      date:        order.date_str,
+      server_ip:   EMAIL_CONFIG.serverIp,
+      server_name: EMAIL_CONFIG.serverName,
+      discord_url: EMAIL_CONFIG.discord,
+      from_name:   EMAIL_CONFIG.fromName,
+    });
+    console.log('[Hyrise] Email konfirmasi terkirim ke', order.email);
+  } catch(err) {
+    console.error('[Hyrise] Gagal kirim email:', err);
+  }
 }
 
 function closeSuccess() { document.getElementById('successModal').classList.remove('open'); }
