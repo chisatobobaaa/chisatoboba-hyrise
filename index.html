@@ -1279,29 +1279,29 @@
     return 'HRS-' + Date.now().toString(36).toUpperCase().slice(-5) + Math.random().toString(36).slice(2,5).toUpperCase();
   }
 
-  async function loadOrders() {
+    async function loadOrders() {
     try {
       const { data: { user } } = await supa.auth.getUser();
       let query = supa.from('orders').select('*').order('created_at', { ascending: false });
-      // Kalau sudah login, filter hanya pesanan milik user ini
       if (user) query = query.eq('user_id', user.id);
       const { data, error } = await query;
       if (error) throw error;
-      // Normalize field names dari Supabase snake_case ke camelCase
-      _ordersCache = (data || []).map(r => ({
-        id:        r.order_id,
-        item:      r.item,
-        price:     r.price,
-        icon:      r.icon,
-        username:  r.username,
-        contact:   r.contact,
-        note:      r.note,
-        bukti:     r.bukti,
-        buktiAt:   r.bukti_at,
-        status:    r.status,
-        createdAt: r.created_at,
-        _dbId:     r.id,
-      }));
+      _ordersCache = (data || [])
+        .filter(r => r.status !== 'done')   // ← TAMBAHKAN BARIS INI
+        .map(r => ({
+          id:        r.order_id,
+          item:      r.item,
+          price:     r.price,
+          icon:      r.icon,
+          username:  r.username,
+          contact:   r.contact,
+          note:      r.note,
+          bukti:     r.bukti,
+          buktiAt:   r.bukti_at,
+          status:    r.status,
+          createdAt: r.created_at,
+          _dbId:     r.id,
+        }));
       return _ordersCache;
     } catch(e) {
       console.warn('Supabase loadOrders fallback to cache:', e);
