@@ -164,6 +164,19 @@
     .bukti-lb-download:hover{background:var(--accent);color:#0a0e14;}
     .bukti-lb-img{display:block;width:100%;max-height:70vh;object-fit:contain;background:#0a0e14;}
 
+    /* ── HISTORY TABLE ── */
+    .history-section{margin-top:24px;background:var(--g2);border:1px solid rgba(168,120,240,0.25);border-radius:14px;overflow:hidden;}
+    .history-head{padding:16px 20px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;}
+    .history-title{font-size:13px;font-weight:700;color:#a878f0;display:flex;align-items:center;gap:8px;}
+    .history-clear-btn{background:transparent;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:'Exo 2',sans-serif;}
+    .history-clear-btn:hover{color:var(--accent3);}
+    .history-head-row{display:grid;grid-template-columns:130px 1fr 120px 100px 140px;gap:12px;padding:10px 20px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border2);background:rgba(0,0,0,0.2);}
+    .history-row{display:grid;grid-template-columns:130px 1fr 120px 100px 140px;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border2);font-size:12px;align-items:center;}
+    .history-row:last-child{border-bottom:none;}
+    .history-row:hover{background:rgba(168,120,240,0.04);}
+    .h-done-badge{background:rgba(87,201,106,0.12);color:var(--accent);border:1px solid rgba(87,201,106,0.3);border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;display:inline-block;}
+    .history-empty{padding:40px;text-align:center;color:var(--muted);font-size:13px;}
+
     /* ── TOAST ── */
     .toast{position:fixed;bottom:24px;right:24px;background:var(--g2);border-radius:10px;padding:12px 20px;font-size:13px;font-weight:600;z-index:999;transform:translateY(60px);opacity:0;transition:all 0.3s;border:1px solid var(--border);}
     .toast.show{transform:translateY(0);opacity:1;}
