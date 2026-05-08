@@ -2141,6 +2141,12 @@
     renderTeam();
   }
   loadSavedData();
+
+  // ── RESTORE SESSION SAAT PAGE LOAD ──────────────────────────
+  supa.auth.onAuthStateChange((_event, session) => {
+    onAuthStateChange();
+  });
+  onAuthStateChange(); // cek langsung saat pertama load
 </script>
 </body>
 </html>
