@@ -899,16 +899,12 @@ async function confirmDone() {
 
   const dbId = o._dbId;
   const doneAt = new Date().toISOString();
-  await updateOrder(dbId, {
-    status: 'done',
-    doneAt,
-    notifWA:    results.wa,
-    notifEmail: results.email,
-  });
-  orders[idx].status     = 'done';
-  orders[idx].doneAt     = doneAt;
-  orders[idx].notifWA    = results.wa;
-  orders[idx].notifEmail = results.email;
+
+  // Hapus pesanan dari Supabase karena sudah selesai dikonfirmasi admin
+  await supa.from('orders').delete().eq('id', dbId);
+
+  // Hapus dari cache lokal
+  _ordersCache.splice(idx, 1);
 
   await renderAll();
   pendingOrderIdx = null;
