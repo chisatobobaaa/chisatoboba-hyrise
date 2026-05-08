@@ -513,6 +513,55 @@
       .stats{grid-template-columns:repeat(2,1fr);}
       .team-grid{grid-template-columns:repeat(2,1fr);}
     }
+
+    /* ===== AUTH MODAL ===== */
+    .auth-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:300;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+    .auth-overlay.open{display:flex;}
+    .auth-box{background:var(--g2);border:1px solid var(--border);border-radius:18px;padding:36px 32px;max-width:380px;width:92%;position:relative;box-shadow:0 24px 64px rgba(0,0,0,0.5);}
+    .auth-logo{text-align:center;font-family:'Cinzel Decorative',serif;font-size:20px;color:var(--accent);margin-bottom:6px;text-shadow:0 0 18px rgba(87,201,106,0.4);}
+    .auth-sub{text-align:center;font-size:12px;color:var(--muted);margin-bottom:26px;}
+    .auth-tabs{display:flex;gap:4px;background:var(--g3);border-radius:8px;padding:4px;margin-bottom:22px;}
+    .auth-tab{flex:1;padding:9px;text-align:center;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);transition:all 0.2s;}
+    .auth-tab.active{background:var(--accent);color:#0d1117;}
+    .auth-label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block;}
+    .auth-input{width:100%;background:var(--g3);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:11px 14px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;outline:none;margin-bottom:12px;transition:border-color 0.2s;}
+    .auth-input:focus{border-color:var(--accent);}
+    .auth-err{font-size:12px;color:var(--accent3);min-height:18px;margin-bottom:10px;text-align:center;}
+    .auth-btn{width:100%;padding:13px;background:var(--accent);color:#0d1117;border:none;border-radius:9px;font-family:'Exo 2',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:2px;}
+    .auth-btn:hover{background:#6ce07d;transform:translateY(-1px);}
+    .auth-btn:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
+    .auth-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;}
+    .auth-close:hover{color:var(--text);}
+    .auth-divider{text-align:center;color:var(--muted);font-size:11px;margin:6px 0 14px;position:relative;}
+    .auth-divider::before,.auth-divider::after{content:'';position:absolute;top:50%;width:38%;height:1px;background:var(--border);}
+    .auth-divider::before{left:0;}.auth-divider::after{right:0;}
+    .auth-success{text-align:center;padding:12px 0;}
+    .auth-success-icon{font-size:42px;margin-bottom:12px;}
+    .auth-success-text{font-size:14px;color:var(--accent);font-weight:600;}
+    .auth-success-sub{font-size:12px;color:var(--muted);margin-top:6px;}
+
+    /* NAV user chip */
+    .nav-user-chip{display:inline-flex;align-items:center;gap:7px;background:rgba(87,201,106,0.1);border:1px solid rgba(87,201,106,0.3);border-radius:20px;padding:5px 13px 5px 8px;cursor:pointer;font-size:12px;color:var(--accent);font-weight:600;transition:all 0.2s;white-space:nowrap;max-width:160px;}
+    .nav-user-chip:hover{background:rgba(87,201,106,0.18);border-color:var(--accent);}
+    .nav-user-avatar{width:22px;height:22px;border-radius:50%;background:rgba(87,201,106,0.2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--accent);flex-shrink:0;}
+    .nav-user-email{overflow:hidden;text-overflow:ellipsis;max-width:100px;}
+    .nav-login-btn{display:inline-flex;align-items:center;gap:5px;background:transparent;border:1px solid rgba(87,201,106,0.4);color:var(--accent);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Exo 2',sans-serif;transition:all 0.2s;}
+    .nav-login-btn:hover{background:rgba(87,201,106,0.1);border-color:var(--accent);}
+
+    /* User dropdown */
+    .user-dropdown{position:relative;display:inline-block;}
+    .user-dropdown-menu{display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--g2);border:1px solid var(--border);border-radius:10px;padding:6px;min-width:160px;z-index:200;box-shadow:0 12px 32px rgba(0,0,0,0.4);}
+    .user-dropdown-menu.open{display:block;}
+    .user-dd-item{padding:9px 12px;border-radius:7px;cursor:pointer;font-size:13px;color:var(--muted);transition:all 0.15s;display:flex;align-items:center;gap:8px;}
+    .user-dd-item:hover{background:var(--g3);color:var(--text);}
+    .user-dd-item.danger:hover{color:var(--accent3);}
+    .user-dd-sep{height:1px;background:var(--border);margin:4px 0;}
+
+    /* Pesanan page – gated view */
+    .orders-gate{text-align:center;padding:60px 20px;}
+    .orders-gate-icon{font-size:48px;margin-bottom:16px;}
+    .orders-gate-title{font-size:18px;font-weight:600;color:#fff;margin-bottom:8px;}
+    .orders-gate-sub{font-size:13px;color:var(--muted);margin-bottom:22px;}
   </style>
 </head>
 <body>
@@ -531,8 +580,11 @@
       <span class="nav-link" onclick="showPage('team',this)">Tim Admin</span>
       <span class="nav-link" onclick="showPage('join',this)">Cara Join</span>
       <span class="nav-link store-link" onclick="showPage('store',this)">🛒 Store</span>
-      <span class="nav-link" onclick="showPage('orders',this)" id="nav-orders" style="color:#a878f0">📋 Pesanan <span id="orders-badge" style="display:none;background:#a878f0;color:#fff;border-radius:20px;padding:1px 7px;font-size:10px;margin-left:3px;"></span></span>
+      <span class="nav-link" onclick="onNavOrders(this)" id="nav-orders" style="color:#a878f0">📋 Pesanan <span id="orders-badge" style="display:none;background:#a878f0;color:#fff;border-radius:20px;padding:1px 7px;font-size:10px;margin-left:3px;"></span></span>
       <a class="nav-link nav-link-admin" href="hyrise-admin-panel.html" target="_blank" title="Masuk ke Admin Panel">🛡 Admin</a>
+      <div id="nav-auth-area" style="display:flex;align-items:center;">
+        <button class="nav-login-btn" onclick="openAuthModal('login')">🔑 Login</button>
+      </div>
     </div>
     </div>
   </nav>
@@ -898,6 +950,58 @@
   </footer>
 </div>
 
+<!-- ===== AUTH MODAL ===== -->
+<div class="auth-overlay" id="auth-overlay" onclick="authOverlayClick(event)">
+  <div class="auth-box">
+    <button class="auth-close" onclick="closeAuthModal()">×</button>
+    <div class="auth-logo">⚔ Hyrise SMP</div>
+    <div class="auth-sub">Masuk atau daftar untuk melihat pesanan kamu</div>
+
+    <div id="auth-panel-main">
+      <div class="auth-tabs">
+        <div class="auth-tab active" id="atab-login" onclick="switchAuthTab('login')">Masuk</div>
+        <div class="auth-tab" id="atab-register" onclick="switchAuthTab('register')">Daftar</div>
+      </div>
+
+      <!-- LOGIN -->
+      <div id="auth-form-login">
+        <label class="auth-label">Email</label>
+        <input type="email" class="auth-input" id="auth-email-login" placeholder="email@kamu.com" autocomplete="email" />
+        <label class="auth-label">Password</label>
+        <input type="password" class="auth-input" id="auth-pass-login" placeholder="••••••••" autocomplete="current-password" />
+        <div class="auth-err" id="auth-err-login"></div>
+        <button class="auth-btn" id="auth-btn-login" onclick="doLogin()">Masuk</button>
+        <div class="auth-divider" style="margin-top:14px">atau</div>
+        <p style="text-align:center;font-size:12px;color:var(--muted)">Belum punya akun? <span style="color:var(--accent);cursor:pointer;font-weight:600;" onclick="switchAuthTab('register')">Daftar sekarang</span></p>
+      </div>
+
+      <!-- REGISTER -->
+      <div id="auth-form-register" style="display:none">
+        <label class="auth-label">Email</label>
+        <input type="email" class="auth-input" id="auth-email-reg" placeholder="email@kamu.com" autocomplete="email" />
+        <label class="auth-label">Password <span style="font-weight:400;text-transform:none;letter-spacing:0">(min. 6 karakter)</span></label>
+        <input type="password" class="auth-input" id="auth-pass-reg" placeholder="••••••••" autocomplete="new-password" />
+        <label class="auth-label">Konfirmasi Password</label>
+        <input type="password" class="auth-input" id="auth-pass-reg2" placeholder="••••••••" autocomplete="new-password" />
+        <div class="auth-err" id="auth-err-reg"></div>
+        <button class="auth-btn" id="auth-btn-reg" onclick="doRegister()">Buat Akun</button>
+        <div class="auth-divider" style="margin-top:14px">atau</div>
+        <p style="text-align:center;font-size:12px;color:var(--muted)">Sudah punya akun? <span style="color:var(--accent);cursor:pointer;font-weight:600;" onclick="switchAuthTab('login')">Masuk</span></p>
+      </div>
+    </div>
+
+    <!-- SUCCESS (register confirm email) -->
+    <div id="auth-panel-success" style="display:none">
+      <div class="auth-success">
+        <div class="auth-success-icon">📧</div>
+        <div class="auth-success-text">Cek email kamu!</div>
+        <div class="auth-success-sub">Kami kirim link konfirmasi ke email kamu. Klik link tersebut lalu login.</div>
+        <button class="auth-btn" style="margin-top:20px" onclick="switchAuthTab('login');document.getElementById('auth-panel-success').style.display='none';document.getElementById('auth-panel-main').style.display='block'">Ke halaman Login</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL PEMBELIAN -->
 <div class="modal-overlay" id="modal" onclick="closeModalOutside(event)">
   <div class="modal">
@@ -1177,7 +1281,11 @@
 
   async function loadOrders() {
     try {
-      const { data, error } = await supa.from('orders').select('*').order('created_at', { ascending: false });
+      const { data: { user } } = await supa.auth.getUser();
+      let query = supa.from('orders').select('*').order('created_at', { ascending: false });
+      // Kalau sudah login, filter hanya pesanan milik user ini
+      if (user) query = query.eq('user_id', user.id);
+      const { data, error } = await query;
       if (error) throw error;
       // Normalize field names dari Supabase snake_case ke camelCase
       _ordersCache = (data || []).map(r => ({
@@ -1198,10 +1306,12 @@
     } catch(e) {
       console.warn('Supabase loadOrders fallback to cache:', e);
       return _ordersCache;
+
     }
   }
 
   async function saveNewOrder(order) {
+    const { data: { user } } = await supa.auth.getUser();
     const { error } = await supa.from('orders').insert([{
       order_id:   order.id,
       item:       order.item,
@@ -1213,6 +1323,7 @@
       bukti:      order.bukti  || null,
       bukti_at:   order.buktiAt || null,
       status:     order.status,
+      user_id:    user ? user.id : null,
     }]);
     if (error) { console.error('saveNewOrder error:', error); return false; }
     return true;
@@ -1385,6 +1496,18 @@
 
   async function renderOrders() {
     const container = document.getElementById('orders-container');
+    // Cek apakah user sudah login
+    const { data: { user } } = await supa.auth.getUser();
+    if (!user) {
+      container.innerHTML = `
+        <div class="orders-gate">
+          <div class="orders-gate-icon">🔒</div>
+          <div class="orders-gate-title">Login diperlukan</div>
+          <div class="orders-gate-sub">Kamu harus login dulu untuk melihat pesanan kamu. Pesanan terikat ke akun supaya tidak tercampur dengan orang lain.</div>
+          <button class="btn btn-primary btn-sm" onclick="openAuthModal('login')">🔑 Login / Daftar</button>
+        </div>`;
+      return;
+    }
     container.innerHTML = `<div style="padding:40px;text-align:center;color:var(--muted)">⏳ Memuat pesanan...</div>`;
     const orders = await loadOrders();
     if (orders.length === 0) {
@@ -1485,6 +1608,117 @@
     document.getElementById('nav-hamburger').classList.remove('open');
     document.getElementById('nav-overlay').classList.remove('open');
     document.body.style.overflow = '';
+  }
+
+  // ── AUTH SYSTEM ───────────────────────────────────────────────
+  let _authCurrentTab = 'login';
+
+  function openAuthModal(tab) {
+    switchAuthTab(tab || 'login');
+    document.getElementById('auth-panel-main').style.display = 'block';
+    document.getElementById('auth-panel-success').style.display = 'none';
+    document.getElementById('auth-overlay').classList.add('open');
+  }
+  function closeAuthModal() {
+    document.getElementById('auth-overlay').classList.remove('open');
+  }
+  function authOverlayClick(e) {
+    if (e.target === document.getElementById('auth-overlay')) closeAuthModal();
+  }
+  function switchAuthTab(tab) {
+    _authCurrentTab = tab;
+    document.getElementById('auth-form-login').style.display = tab === 'login' ? 'block' : 'none';
+    document.getElementById('auth-form-register').style.display = tab === 'register' ? 'block' : 'none';
+    document.getElementById('atab-login').classList.toggle('active', tab === 'login');
+    document.getElementById('atab-register').classList.toggle('active', tab === 'register');
+    document.getElementById('auth-err-login').textContent = '';
+    document.getElementById('auth-err-reg').textContent = '';
+  }
+
+  async function doLogin() {
+    const email = document.getElementById('auth-email-login').value.trim();
+    const pass  = document.getElementById('auth-pass-login').value;
+    const errEl = document.getElementById('auth-err-login');
+    const btn   = document.getElementById('auth-btn-login');
+    if (!email || !pass) { errEl.textContent = 'Email dan password wajib diisi!'; return; }
+    btn.disabled = true; btn.textContent = 'Memproses...';
+    const { error } = await supa.auth.signInWithPassword({ email, password: pass });
+    btn.disabled = false; btn.textContent = 'Masuk';
+    if (error) { errEl.textContent = error.message === 'Invalid login credentials' ? 'Email atau password salah.' : error.message; return; }
+    closeAuthModal();
+    await onAuthStateChange();
+    showToast('✅ Berhasil login!');
+  }
+
+  async function doRegister() {
+    const email  = document.getElementById('auth-email-reg').value.trim();
+    const pass   = document.getElementById('auth-pass-reg').value;
+    const pass2  = document.getElementById('auth-pass-reg2').value;
+    const errEl  = document.getElementById('auth-err-reg');
+    const btn    = document.getElementById('auth-btn-reg');
+    if (!email || !pass) { errEl.textContent = 'Email dan password wajib diisi!'; return; }
+    if (pass.length < 6) { errEl.textContent = 'Password minimal 6 karakter!'; return; }
+    if (pass !== pass2)  { errEl.textContent = 'Password tidak cocok!'; return; }
+    btn.disabled = true; btn.textContent = 'Memproses...';
+    const { error } = await supa.auth.signUp({ email, password: pass });
+    btn.disabled = false; btn.textContent = 'Buat Akun';
+    if (error) { errEl.textContent = error.message; return; }
+    document.getElementById('auth-panel-main').style.display = 'none';
+    document.getElementById('auth-panel-success').style.display = 'block';
+  }
+
+  async function doLogout() {
+    await supa.auth.signOut();
+    _ordersCache = [];
+    await onAuthStateChange();
+    showToast('👋 Berhasil logout');
+  }
+
+  async function onAuthStateChange() {
+    const { data: { user } } = await supa.auth.getUser();
+    const area = document.getElementById('nav-auth-area');
+    if (user) {
+      const emailShort = user.email.length > 18 ? user.email.slice(0, 15) + '…' : user.email;
+      const initial = user.email[0].toUpperCase();
+      area.innerHTML = `
+        <div class="user-dropdown">
+          <div class="nav-user-chip" onclick="toggleUserDropdown()">
+            <div class="nav-user-avatar">${initial}</div>
+            <span class="nav-user-email">${emailShort}</span>
+          </div>
+          <div class="user-dropdown-menu" id="user-dd-menu">
+            <div class="user-dd-item" onclick="showPage('orders', document.getElementById('nav-orders'));toggleUserDropdown()">📋 Pesanan Saya</div>
+            <div class="user-dd-sep"></div>
+            <div class="user-dd-item danger" onclick="doLogout()">🚪 Logout</div>
+          </div>
+        </div>`;
+      await updateOrdersBadge();
+    } else {
+      area.innerHTML = `<button class="nav-login-btn" onclick="openAuthModal('login')">🔑 Login</button>`;
+      // Reset badge
+      const badge = document.getElementById('orders-badge');
+      if (badge) badge.style.display = 'none';
+    }
+  }
+
+  function toggleUserDropdown() {
+    const menu = document.getElementById('user-dd-menu');
+    if (menu) menu.classList.toggle('open');
+  }
+  // Close dropdown on outside click
+  document.addEventListener('click', (e) => {
+    const dd = document.getElementById('user-dd-menu');
+    if (dd && dd.classList.contains('open') && !dd.closest('.user-dropdown').contains(e.target)) {
+      dd.classList.remove('open');
+    }
+  });
+
+  // Nav orders handler — show gate or orders
+  function onNavOrders(el) {
+    showPage('orders', el);
+    // renderOrders is called by showPage → page becomes active
+    // We re-render to check auth state
+    renderOrders();
   }
 
   // ── INIT ──────────────────────────────────────────────────────
