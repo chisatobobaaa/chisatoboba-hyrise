@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hyrise Admin — Order Panel</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/font/tabler-icons.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPA_URL = 'https://cyronojjprlsvkhjvoud.supabase.co';
+    const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5cm9ub2pqcHJsc3ZraGp2b3VkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjE5OTUsImV4cCI6MjA5Mzc5Nzk5NX0.FMp8fYJ33ysmX99sGjjUZKmYesbPehNCJipZ1q1EvhY';
+    const supa = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+  </script>
+  <style>
+    :root{
+      --g1:#0a0e14;--g2:#111820;--g3:#1a2230;--g4:#1f2d40;
+      --accent:#57c96a;--accent2:#f0a500;--accent3:#e05a4e;--accent4:#7aa2f7;--purple:#a878f0;
+      --muted:#6b7a8d;--border:rgba(87,201,106,0.15);--border2:rgba(255,255,255,0.07);--text:#dde6f0;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    html,body{font-family:'Exo 2',sans-serif;background:var(--g1);color:var(--text);min-height:100vh;}
+
+    /* ── LOGIN ── */
+    .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 30%,rgba(87,201,106,0.08) 0%,transparent 65%);}
+    .login-box{background:var(--g2);border:1px solid var(--border);border-radius:20px;padding:44px 40px;max-width:380px;width:90%;text-align:center;}
+    .login-logo{font-family:'Cinzel Decorative',serif;font-size:20px;color:var(--accent);margin-bottom:6px;text-shadow:0 0 20px rgba(87,201,106,0.4);}
+    .login-sub{font-size:12px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:32px;}
+    .login-label{display:block;font-size:11px;color:var(--muted);text-align:left;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;}
+    .login-input{width:100%;background:var(--g3);border:1px solid var(--border2);border-radius:9px;padding:12px 15px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:14px;margin-bottom:14px;outline:none;transition:border-color 0.2s;}
+    .login-input:focus{border-color:var(--accent);}
+    .login-btn{width:100%;background:var(--accent);color:#0a0e14;border:none;border-radius:9px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Exo 2',sans-serif;transition:background 0.2s;margin-top:4px;}
+    .login-btn:hover{background:#6ce07d;}
+    .login-err{font-size:12px;color:var(--accent3);margin-bottom:12px;min-height:18px;}
+
+    /* ── LAYOUT ── */
+    .admin-wrap{display:none;min-height:100vh;flex-direction:column;}
+    .admin-wrap.show{display:flex;}
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;background:var(--g2);border-bottom:1px solid var(--border2);position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);}
+    .topbar-logo{font-family:'Cinzel Decorative',serif;font-size:16px;color:var(--accent);}
+    .topbar-right{display:flex;align-items:center;gap:14px;}
+    .topbar-clock{font-size:12px;color:var(--muted);font-family:monospace;}
+    .logout-btn{background:transparent;border:1px solid var(--border2);color:var(--muted);border-radius:7px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:'Exo 2',sans-serif;transition:all 0.2s;}
+    .logout-btn:hover{border-color:var(--accent3);color:var(--accent3);}
+    .main{flex:1;padding:28px;}
+
+    /* ── SETUP BANNER ── */
+    .setup-banner{background:linear-gradient(135deg,rgba(168,120,240,0.12),rgba(240,165,0,0.08));border:1px solid rgba(168,120,240,0.3);border-radius:14px;padding:22px 26px;margin-bottom:24px;}
+    .setup-banner h3{font-size:14px;font-weight:700;color:var(--purple);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+    .setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .setup-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;}
+    .setup-input{width:100%;background:var(--g3);border:1px solid var(--border2);border-radius:8px;padding:10px 13px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;outline:none;transition:border-color 0.2s;}
+    .setup-input:focus{border-color:var(--purple);}
+    .setup-save{background:var(--purple);color:#fff;border:none;border-radius:8px;padding:10px 22px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Exo 2',sans-serif;margin-top:14px;transition:background 0.2s;}
+    .setup-save:hover{background:#bf9df7;}
+    .setup-status{font-size:12px;margin-top:8px;color:var(--accent);}
+
+    /* ── STATS ── */
+    .stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px;}
+    .stat-box{background:var(--g2);border:1px solid var(--border2);border-radius:12px;padding:18px 20px;}
+    .stat-box-num{font-size:28px;font-weight:700;font-family:'Cinzel Decorative',serif;margin-bottom:4px;}
+    .stat-box-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+    .c-green{color:var(--accent);}
+    .c-amber{color:var(--accent2);}
+    .c-red{color:var(--accent3);}
+    .c-purple{color:var(--purple);}
+
+    /* ── FILTERS ── */
+    .filters{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+    .filter-btn{background:var(--g2);border:1px solid var(--border2);color:var(--muted);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Exo 2',sans-serif;transition:all 0.2s;text-transform:uppercase;letter-spacing:0.5px;}
+    .filter-btn.active,.filter-btn:hover{border-color:var(--accent);color:var(--accent);}
+    .search-input{background:var(--g2);border:1px solid var(--border2);border-radius:8px;padding:8px 14px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;outline:none;width:200px;transition:border-color 0.2s;}
+    .search-input:focus{border-color:var(--accent);}
+    .refresh-btn{background:transparent;border:1px solid var(--border2);color:var(--muted);border-radius:8px;padding:8px 14px;cursor:pointer;font-size:13px;transition:all 0.2s;margin-left:auto;}
+    .refresh-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+    /* ── ORDER TABLE ── */
+    .table-wrap{background:var(--g2);border:1px solid var(--border2);border-radius:14px;overflow:hidden;}
+    .table-head{display:grid;grid-template-columns:90px 1fr 130px 110px 140px 110px;gap:0;background:var(--g3);padding:12px 18px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;}
+    .t-row{display:grid;grid-template-columns:90px 1fr 130px 110px 140px 110px;gap:0;padding:16px 18px;border-top:1px solid var(--border2);align-items:center;transition:background 0.15s;}
+    .t-row:hover{background:rgba(255,255,255,0.02);}
+    .t-row.paid-row{opacity:0.6;}
+    .t-cell{font-size:13px;padding-right:10px;word-break:break-word;}
+    .t-id{font-family:monospace;font-size:12px;color:var(--accent2);}
+    .t-item{font-weight:600;color:var(--text);}
+    .t-item small{display:block;font-size:11px;color:var(--muted);font-weight:400;margin-top:2px;}
+    .t-contact{font-size:12px;color:var(--muted);}
+    .t-contact span{display:block;color:var(--text);}
+    .t-price{font-weight:700;color:#fff;}
+    .badge{display:inline-block;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.5px;text-transform:uppercase;}
+    .badge-pending{background:rgba(240,165,0,0.15);color:var(--accent2);border:1px solid rgba(240,165,0,0.3);}
+    .badge-paid{background:rgba(87,201,106,0.15);color:var(--accent);border:1px solid rgba(87,201,106,0.3);}
+    .badge-done{background:rgba(168,120,240,0.15);color:var(--purple);border:1px solid rgba(168,120,240,0.3);}
+    .action-cell{display:flex;flex-direction:column;gap:6px;}
+    .act-btn{border:none;border-radius:7px;padding:7px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Exo 2',sans-serif;transition:all 0.2s;display:flex;align-items:center;gap:5px;width:100%;justify-content:center;}
+    .act-done{background:rgba(168,120,240,0.15);color:var(--purple);border:1px solid rgba(168,120,240,0.3);}
+    .act-done:hover{background:var(--purple);color:#fff;}
+    .act-done:disabled{opacity:0.4;cursor:default;}
+    .act-del{background:rgba(224,90,78,0.1);color:var(--accent3);border:1px solid rgba(224,90,78,0.3);}
+    .act-del:hover{background:var(--accent3);color:#fff;}
+    .empty-table{padding:48px;text-align:center;color:var(--muted);}
+    .empty-table-icon{font-size:40px;margin-bottom:12px;}
+
+    /* ── COMMAND MODAL ── */
+    .cmd-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:300;align-items:center;justify-content:center;padding:16px;}
+    .cmd-overlay.open{display:flex;}
+    .cmd-modal{background:var(--g2);border:1px solid rgba(87,201,106,0.3);border-radius:18px;padding:32px;max-width:520px;width:100%;position:relative;}
+    .cmd-modal-close{position:absolute;top:14px;right:16px;background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:20px;}
+    .cmd-modal-close:hover{color:var(--text);}
+    .cmd-tag{font-size:11px;color:var(--accent);font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
+    .cmd-title{font-family:'Cinzel Decorative',serif;font-size:17px;color:#fff;margin-bottom:4px;}
+    .cmd-sub{font-size:12px;color:var(--muted);margin-bottom:22px;}
+    .cmd-steps{display:flex;flex-direction:column;gap:10px;margin-bottom:22px;}
+    .cmd-step{background:var(--g3);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;}
+    .cmd-step-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+    .cmd-step-label span{color:var(--accent);font-weight:700;}
+    .cmd-code{font-family:monospace;font-size:13px;color:var(--accent);background:rgba(87,201,106,0.07);border:1px solid rgba(87,201,106,0.2);border-radius:7px;padding:10px 14px;word-break:break-all;margin-bottom:8px;}
+    .cmd-copy-btn{background:rgba(87,201,106,0.12);border:1px solid rgba(87,201,106,0.3);color:var(--accent);border-radius:7px;padding:7px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Exo 2',sans-serif;transition:all 0.2s;width:100%;}
+    .cmd-copy-btn:hover{background:var(--accent);color:#0a0e14;}
+    .cmd-copy-btn.copied{background:var(--accent);color:#0a0e14;}
+    .cmd-divider{text-align:center;font-size:11px;color:var(--muted);margin:4px 0;}
+    .cmd-footer{display:flex;gap:10px;}
+    .cmd-btn-done{flex:2;background:var(--purple);color:#fff;border:none;border-radius:9px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Exo 2',sans-serif;transition:background 0.2s;}
+    .cmd-btn-done:hover{background:#bf9df7;}
+    .cmd-btn-cancel{flex:1;background:transparent;color:var(--muted);border:1px solid var(--border2);border-radius:9px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Exo 2',sans-serif;}
+    .cmd-btn-cancel:hover{border-color:var(--accent3);color:var(--accent3);}
+    .cmd-ptero-link{display:flex;align-items:center;gap:8px;background:rgba(122,162,247,0.08);border:1px solid rgba(122,162,247,0.2);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--accent4);text-decoration:none;}
+    .cmd-ptero-link:hover{background:rgba(122,162,247,0.15);}
+
+    /* ── NOTIF LOG ── */
+    .notif-log{margin-top:24px;background:var(--g2);border:1px solid var(--border2);border-radius:14px;overflow:hidden;}
+    .notif-log-head{padding:16px 20px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;}
+    .notif-log-title{font-size:13px;font-weight:700;color:var(--text);}
+    .notif-log-clear{background:transparent;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:'Exo 2',sans-serif;}
+    .notif-log-clear:hover{color:var(--accent3);}
+    .log-list{max-height:220px;overflow-y:auto;padding:8px 0;}
+    .log-item{padding:10px 20px;font-size:12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border2);}
+    .log-item:last-child{border-bottom:none;}
+    .log-time{color:var(--muted);font-family:monospace;font-size:11px;min-width:80px;}
+    .log-msg{flex:1;}
+    .log-ok{color:var(--accent);}
+    .log-fail{color:var(--accent3);}
+    .log-info{color:var(--accent4);}
+
+    /* ── SENDING OVERLAY ── */
+    .sending-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;align-items:center;justify-content:center;}
+    .sending-overlay.show{display:flex;}
+    .sending-box{background:var(--g2);border:1px solid rgba(168,120,240,0.4);border-radius:16px;padding:40px;text-align:center;max-width:320px;width:90%;}
+    .sending-spinner{width:48px;height:48px;border:3px solid var(--g3);border-top-color:var(--purple);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 18px;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .sending-text{font-size:14px;color:var(--text);margin-bottom:6px;}
+    .sending-sub{font-size:12px;color:var(--muted);}
+
+    /* ── BUKTI LIGHTBOX ── */
+    .bukti-lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:400;align-items:center;justify-content:center;padding:20px;}
+    .bukti-lightbox.open{display:flex;}
+    .bukti-lb-close{position:absolute;top:16px;right:20px;background:transparent;border:none;color:#fff;font-size:32px;cursor:pointer;line-height:1;z-index:10;}
+    .bukti-lb-box{background:var(--g2);border:1px solid var(--border2);border-radius:16px;overflow:hidden;max-width:600px;width:100%;}
+    .bukti-lb-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border2);}
+    .bukti-lb-title{font-size:14px;font-weight:700;color:var(--text);}
+    .bukti-lb-sub{font-size:11px;color:var(--muted);margin-top:3px;}
+    .bukti-lb-download{background:rgba(87,201,106,0.12);border:1px solid rgba(87,201,106,0.3);color:var(--accent);border-radius:8px;padding:7px 16px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;}
+    .bukti-lb-download:hover{background:var(--accent);color:#0a0e14;}
+    .bukti-lb-img{display:block;width:100%;max-height:70vh;object-fit:contain;background:#0a0e14;}
+
+    /* ── TOAST ── */
+    .toast{position:fixed;bottom:24px;right:24px;background:var(--g2);border-radius:10px;padding:12px 20px;font-size:13px;font-weight:600;z-index:999;transform:translateY(60px);opacity:0;transition:all 0.3s;border:1px solid var(--border);}
+    .toast.show{transform:translateY(0);opacity:1;}
+    .toast.ok{border-color:var(--accent);color:var(--accent);}
+    .toast.err{border-color:var(--accent3);color:var(--accent3);}
+    .toast.info{border-color:var(--accent4);color:var(--accent4);}
+
+    /* ── MC COMMAND CONSOLE ── */
+    .mc-console{margin-top:24px;background:var(--g2);border:1px solid rgba(87,201,106,0.2);border-radius:14px;overflow:hidden;}
+    .mc-console-head{padding:18px 22px 0;border-bottom:1px solid var(--border2);}
+    .mc-console-title{font-size:14px;font-weight:700;color:var(--accent);display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+    .mc-console-sub{font-size:11px;color:var(--muted);margin-bottom:14px;}
+    .mc-console-body{padding:16px 18px 20px;}
+    .mc-console-output{background:#0a0e14;border:1px solid rgba(87,201,106,0.12);border-radius:10px;padding:14px 16px;font-family:monospace;font-size:12px;min-height:140px;max-height:240px;overflow-y:auto;margin-bottom:12px;display:flex;flex-direction:column;gap:5px;}
+    .mc-output-line{line-height:1.55;}
+    .mc-line-info{color:var(--muted);}
+    .mc-line-send{color:#a878f0;}
+    .mc-line-ok{color:#57c96a;}
+    .mc-line-err{color:var(--accent3);}
+    .mc-line-send{color:#7aa2f7;}
+    .mc-input-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+    .mc-prompt{font-family:monospace;color:var(--accent);font-size:16px;font-weight:700;flex-shrink:0;}
+    .mc-input{flex:1;background:var(--g3);border:1px solid var(--border2);border-radius:8px;padding:11px 14px;color:var(--text);font-family:monospace;font-size:13px;outline:none;transition:border-color 0.2s;}
+    .mc-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(87,201,106,0.08);}
+    .mc-send-btn{background:var(--accent);color:#0a0e14;border:none;border-radius:8px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Exo 2',sans-serif;display:flex;align-items:center;gap:6px;flex-shrink:0;transition:background 0.2s;}
+    .mc-send-btn:hover{background:#6ce07d;}
+    .mc-clear-btn{background:transparent;border:1px solid var(--border2);color:var(--muted);border-radius:8px;padding:11px 13px;font-size:14px;cursor:pointer;transition:all 0.2s;flex-shrink:0;}
+    .mc-clear-btn:hover{border-color:var(--accent3);color:var(--accent3);}
+    .mc-quick-cmds{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:12px;}
+    .mc-quick-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-right:2px;}
+    .mc-qbtn{background:var(--g3);border:1px solid var(--border2);color:var(--muted);border-radius:6px;padding:5px 13px;font-size:11px;font-weight:600;cursor:pointer;font-family:monospace;transition:all 0.2s;}
+    .mc-qbtn:hover{border-color:var(--accent);color:var(--accent);background:rgba(87,201,106,0.06);}
+    .mc-qbtn-danger{border-color:rgba(224,90,78,0.3);color:rgba(224,90,78,0.7);}
+    .mc-qbtn-danger:hover{border-color:var(--accent3);color:var(--accent3);background:rgba(224,90,78,0.06);}
+    .mc-qbtn-accent{border-color:rgba(122,162,247,0.3);color:var(--accent4);}
+    .mc-qbtn-accent:hover{background:rgba(122,162,247,0.08);}
+    .mc-console-note{display:flex;align-items:flex-start;gap:8px;font-size:11px;color:var(--muted);background:rgba(87,201,106,0.04);border:1px solid rgba(87,201,106,0.1);border-radius:8px;padding:10px 14px;line-height:1.6;}
+    .mc-console-note strong{color:var(--text);}
+    @media(max-width:760px){.mc-input-row{flex-wrap:wrap;}.mc-input{width:100%;order:2;}.mc-prompt{order:1;}.mc-send-btn,.mc-clear-btn{order:3;}}
+
+    /* ===== MOBILE ===== */
+    @media(max-width:760px){
+
+      /* — LOGIN — */
+      .login-box{padding:32px 22px;border-radius:16px;}
+      .login-logo{font-size:18px;}
+
+      /* — TOPBAR — */
+      .topbar{padding:12px 16px;}
+      .topbar-logo{font-size:13px;}
+      .topbar-clock{display:none;}
+      .logout-btn{padding:6px 10px;font-size:11px;}
+
+      /* — MAIN — */
+      .main{padding:14px 12px 40px;}
+
+      /* — SETUP BANNER — */
+      .setup-banner{padding:16px 14px;border-radius:12px;margin-bottom:16px;}
+      .setup-banner h3{font-size:13px;margin-bottom:12px;}
+      .setup-grid{grid-template-columns:1fr;gap:10px;}
+      .setup-input{font-size:12px;padding:9px 11px;}
+      .setup-save{width:100%;padding:11px;margin-top:10px;}
+
+      /* — STATS ROW — */
+      .stats-row{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;}
+      .stat-box{padding:14px 12px;border-radius:10px;}
+      .stat-box-num{font-size:22px;}
+      .stat-box-label{font-size:10px;}
+
+      /* — FILTERS — */
+      .filters{gap:6px;margin-bottom:14px;}
+      .filter-btn{padding:7px 11px;font-size:11px;border-radius:7px;}
+      .search-input{width:100%;font-size:12px;padding:8px 12px;}
+      .refresh-btn{padding:7px 11px;margin-left:0;}
+
+      /* — ORDER TABLE → CARDS — */
+      .table-wrap{border-radius:12px;background:transparent;border:none;gap:10px;display:flex;flex-direction:column;}
+      .table-head{display:none;}
+      .t-row{
+        display:flex;flex-direction:column;gap:0;
+        background:var(--g2);border:1px solid var(--border2);
+        border-radius:12px;padding:0;overflow:hidden;
+      }
+      /* Card header row: ID + badge */
+      .t-row > .t-cell:nth-child(1){
+        display:flex;align-items:center;justify-content:space-between;
+        padding:10px 14px;background:var(--g3);
+        border-bottom:1px solid var(--border2);
+      }
+      /* Item & buyer */
+      .t-row > .t-cell:nth-child(2){
+        padding:12px 14px 8px;font-size:14px;
+        border-bottom:1px solid var(--border2);
+      }
+      .t-item small{margin-top:4px;}
+      /* Contact */
+      .t-row > .t-cell:nth-child(3){
+        padding:8px 14px;font-size:12px;
+        border-bottom:1px solid var(--border2);
+      }
+      /* Price */
+      .t-row > .t-cell:nth-child(4){
+        padding:8px 14px;font-size:15px;font-weight:700;color:#fff;
+        border-bottom:1px solid var(--border2);
+      }
+      /* Status */
+      .t-row > .t-cell:nth-child(5){
+        padding:8px 14px;
+        border-bottom:1px solid var(--border2);
+      }
+      /* Actions */
+      .action-cell{
+        padding:12px 14px;display:grid;
+        grid-template-columns:1fr 1fr;gap:8px;
+      }
+      .action-cell .act-btn:first-child{grid-column:1/-1;}
+      .act-btn{padding:9px 10px;font-size:12px;border-radius:8px;}
+
+      /* — NOTIF LOG — */
+      .notif-log{margin-top:16px;border-radius:12px;}
+      .notif-log-head{padding:12px 14px;}
+      .log-item{padding:9px 14px;gap:8px;}
+      .log-time{min-width:60px;font-size:10px;}
+      .log-msg{font-size:11px;}
+
+      /* — MC CONSOLE — */
+      .mc-console{margin-top:16px;border-radius:12px;}
+      .mc-console-head{padding:14px 14px 0;}
+      .mc-console-title{font-size:13px;}
+      .mc-console-body{padding:12px 12px 16px;}
+      .mc-console-output{font-size:11px;min-height:100px;max-height:160px;padding:10px 12px;}
+      .mc-input-row{gap:6px;}
+      .mc-input{font-size:12px;padding:9px 11px;}
+      .mc-send-btn{padding:9px 14px;font-size:12px;}
+      .mc-clear-btn{padding:9px 11px;}
+      .mc-quick-cmds{gap:5px;}
+      .mc-qbtn{padding:5px 10px;font-size:11px;}
+      .mc-console-note{font-size:11px;padding:9px 12px;}
+
+      /* — CMD MODAL (bottom sheet) — */
+      .cmd-overlay{padding:0;align-items:flex-end;}
+      .cmd-modal{
+        border-radius:20px 20px 0 0;padding:20px 18px 32px;
+        max-height:90vh;width:100%;
+        border-top:3px solid rgba(87,201,106,0.25);
+      }
+      .cmd-modal::before{
+        content:'';display:block;width:40px;height:4px;
+        background:rgba(255,255,255,0.12);border-radius:2px;
+        margin:0 auto 18px;
+      }
+      .cmd-title{font-size:15px;}
+      .cmd-footer{flex-direction:column;gap:8px;}
+      .cmd-btn-done,.cmd-btn-cancel{width:100%;padding:12px;}
+
+      /* — BUKTI LIGHTBOX — */
+      .bukti-lb-box{border-radius:0;max-width:100%;}
+      .bukti-lb-head{padding:12px 14px;}
+
+      /* — TOAST — */
+      .toast{bottom:16px;right:12px;left:12px;text-align:center;font-size:12px;border-radius:12px;}
+    }
+
+    @media(max-width:400px){
+      .stats-row{grid-template-columns:repeat(2,1fr);}
+      .action-cell{grid-template-columns:1fr;}
+      .action-cell .act-btn:first-child{grid-column:1;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ LOGIN ═══════════ -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">⚔ Hyrise SMP</div>
+    <div class="login-sub">Admin Panel</div>
+    <label class="login-label">Password Admin</label>
+    <input type="password" class="login-input" id="pw-input" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <div class="login-err" id="login-err"></div>
+    <button class="login-btn" onclick="doLogin()">Masuk →</button>
+    <p style="font-size:11px;color:var(--muted);margin-top:18px">Default password: <code style="color:var(--accent)">hyrise2025</code><br>Ganti di baris <code style="color:var(--accent2)">ADMIN_PW</code> di dalam script</p>
+  </div>
+</div>
+
+<!-- ═══════════ ADMIN PANEL ═══════════ -->
+<div class="admin-wrap" id="admin-wrap">
+  <div class="topbar">
+    <div class="topbar-logo">⚔ Hyrise Admin Panel</div>
+    <div class="topbar-right">
+      <div class="topbar-clock" id="clock">--:--:--</div>
+      <button class="logout-btn" onclick="doLogout()"><i class="ti ti-logout"></i> Logout</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- Setup API Keys -->
+    <div class="setup-banner" id="setup-banner">
+      <h3><i class="ti ti-settings"></i> Setup Integrasi Notifikasi</h3>
+      <div class="setup-grid">
+        <div class="setup-field">
+          <label>EmailJS Public Key</label>
+          <input class="setup-input" id="cfg-emailjs-key" placeholder="contoh: user_xxxxxxxxxxxxxxx"/>
+        </div>
+        <div class="setup-field">
+          <label>EmailJS Service ID</label>
+          <input class="setup-input" id="cfg-emailjs-service" placeholder="contoh: service_xxxxxxx"/>
+        </div>
+        <div class="setup-field">
+          <label>EmailJS Template ID</label>
+          <input class="setup-input" id="cfg-emailjs-template" placeholder="contoh: template_xxxxxxx"/>
+        </div>
+        <div class="setup-field">
+          <label>Fonnte API Token (WA)</label>
+          <input class="setup-input" id="cfg-fonnte-token" placeholder="Token dari fonnte.com"/>
+        </div>
+        <div class="setup-field">
+          <label>Nama Server (untuk isi pesan)</label>
+          <input class="setup-input" id="cfg-server-name" placeholder="Hyrise SMP"/>
+        </div>
+        <div class="setup-field">
+          <label>Link Discord Server</label>
+          <input class="setup-input" id="cfg-discord" placeholder="https://discord.gg/hyrisesmp"/>
+        </div>
+        <div class="setup-field">
+          <label>IP Server Minecraft</label>
+          <input class="setup-input" id="cfg-server-ip" placeholder="furina.nexuscloud.id:25520"/>
+        </div>
+      </div>
+
+      <div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.07)">
+        <div style="font-size:12px;font-weight:700;color:#7aa2f7;margin-bottom:12px;display:flex;align-items:center;gap:6px"><i class="ti ti-terminal-2"></i> Pterodactyl — Auto Command ke Server Minecraft</div>
+        <div class="setup-grid">
+          <div class="setup-field">
+            <label>Pterodactyl Panel URL</label>
+            <input class="setup-input" id="cfg-ptero-url" placeholder="https://panel.nexuscloud.id"/>
+          </div>
+          <div class="setup-field">
+            <label>Pterodactyl API Key</label>
+            <input class="setup-input" id="cfg-ptero-key" placeholder="ptlc_xxxxxxxxxxxxxxxxx" type="password"/>
+          </div>
+          <div class="setup-field">
+            <label>Server ID</label>
+            <input class="setup-input" id="cfg-ptero-server" placeholder="dd6918a7"/>
+          </div>
+          <div class="setup-field" style="display:flex;align-items:flex-end">
+            <button class="setup-save" style="margin-top:0;background:var(--accent4);width:100%" onclick="testPtero()">🔌 Test Koneksi</button>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.6">
+          ⚡ Saat admin klik <strong style="color:var(--text)">"Selesai & Kirim Notif"</strong>, sistem otomatis kirim command ke console:<br>
+          Rank → <code style="color:var(--accent)">lp user {username} parent set {rank}</code> &nbsp;|&nbsp;
+          Key → <code style="color:var(--accent)">crate key give {username} hyrise {qty}</code>
+        </div>
+      </div>
+
+      <button class="setup-save" onclick="saveConfig()">💾 Simpan Konfigurasi</button>
+      <div class="setup-status" id="setup-status"></div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row" id="stats-row">
+      <div class="stat-box"><div class="stat-box-num c-green" id="s-total">0</div><div class="stat-box-label">Total Pesanan</div></div>
+      <div class="stat-box"><div class="stat-box-num c-amber" id="s-pending">0</div><div class="stat-box-label">Menunggu Bayar</div></div>
+      <div class="stat-box"><div class="stat-box-num c-purple" id="s-done">0</div><div class="stat-box-label">Selesai</div></div>
+      <div class="stat-box"><div class="stat-box-num c-green" id="s-rev">Rp 0</div><div class="stat-box-label">Est. Revenue</div></div>
+      <div class="stat-box" style="border-color:rgba(87,201,106,0.25)"><div class="stat-box-num" id="s-bukti" style="color:#57c96a">0</div><div class="stat-box-label">Sudah Kirim Bukti</div></div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <button class="filter-btn active" onclick="setFilter('all',this)">Semua</button>
+      <button class="filter-btn" onclick="setFilter('pending',this)">Menunggu Bayar</button>
+      <button class="filter-btn" onclick="setFilter('paid',this)">Sudah Bayar</button>
+      <button class="filter-btn" onclick="setFilter('done',this)">Selesai</button>
+      <input type="text" class="search-input" id="search-input" placeholder="🔍  Cari username / item..." oninput="renderTable()"/>
+      <button class="refresh-btn" onclick="renderAll()" title="Refresh"><i class="ti ti-refresh"></i></button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <div class="table-head">
+        <div>ID Pesanan</div>
+        <div>Item & Pembeli</div>
+        <div>Kontak</div>
+        <div>Harga</div>
+        <div>Status</div>
+        <div>Aksi</div>
+      </div>
+      <div id="order-table-body"></div>
+    </div>
+
+    <!-- Notif Log -->
+    <div class="notif-log">
+      <div class="notif-log-head">
+        <div class="notif-log-title">📨 Log Notifikasi</div>
+        <button class="notif-log-clear" onclick="clearLog()">Hapus Log</button>
+      </div>
+      <div class="log-list" id="log-list"><div style="padding:14px 20px;font-size:12px;color:var(--muted)">Belum ada aktivitas notifikasi.</div></div>
+    </div>
+
+    <!-- ═══ MC COMMAND CONSOLE ═══ -->
+    <div class="mc-console">
+      <div class="mc-console-head">
+        <div class="mc-console-title"><i class="ti ti-terminal-2"></i> Command Console — Server Minecraft</div>
+        <div class="mc-console-sub">Ketik dan kirim command langsung ke server tanpa membuka Pterodactyl</div>
+      </div>
+      <div class="mc-console-body">
+        <div class="mc-console-output" id="mc-output">
+          <div class="mc-output-line mc-line-info">[ Console siap. Ketik command di bawah dan klik Kirim. ]</div>
+        </div>
+        <div class="mc-input-row">
+          <span class="mc-prompt">$</span>
+          <input type="text" class="mc-input" id="mc-cmd-input" placeholder="Contoh: say Halo semua!  |  give HyriseX diamond 64  |  op HyriseX" onkeydown="if(event.key==='Enter')sendMcCmd()"/>
+          <button class="mc-send-btn" onclick="sendMcCmd()"><i class="ti ti-send"></i> Kirim</button>
+          <button class="mc-clear-btn" onclick="clearMcOutput()" title="Bersihkan output"><i class="ti ti-eraser"></i></button>
+        </div>
+        <div class="mc-quick-cmds">
+          <span class="mc-quick-label">Quick:</span>
+          <button class="mc-qbtn" onclick="setMcCmd('list')">list</button>
+          <button class="mc-qbtn" onclick="setMcCmd('say ')">say</button>
+          <button class="mc-qbtn" onclick="setMcCmd('kick ')">kick</button>
+          <button class="mc-qbtn" onclick="setMcCmd('ban ')">ban</button>
+          <button class="mc-qbtn" onclick="setMcCmd('op ')">op</button>
+          <button class="mc-qbtn" onclick="setMcCmd('deop ')">deop</button>
+          <button class="mc-qbtn" onclick="setMcCmd('tp ')">tp</button>
+          <button class="mc-qbtn" onclick="setMcCmd('give ')">give</button>
+          <button class="mc-qbtn mc-qbtn-danger" onclick="setMcCmd('stop')">stop</button>
+          <button class="mc-qbtn mc-qbtn-accent" onclick="setMcCmd('reload confirm')">reload</button>
+        </div>
+        <div class="mc-console-note">
+          <i class="ti ti-info-circle"></i>
+          Command dikirim melalui <strong>Pterodactyl API</strong>. Pastikan URL Panel, API Key, dan Server ID sudah diatur di Setup di atas.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Command Modal -->
+<div class="cmd-overlay" id="cmd-overlay">
+  <div class="cmd-modal">
+    <button class="cmd-modal-close" onclick="closeCmdModal()"><i class="ti ti-x"></i></button>
+    <div class="cmd-tag">⚡ Command Minecraft</div>
+    <div class="cmd-title" id="cmd-title">Item</div>
+    <div class="cmd-sub" id="cmd-sub">Copy command di bawah → paste di console Pterodactyl</div>
+
+    <a class="cmd-ptero-link" id="cmd-ptero-link" href="https://panel.nexuscloud.id" target="_blank">
+      <i class="ti ti-external-link"></i> Buka Console Pterodactyl →
+    </a>
+
+    <div class="cmd-steps" id="cmd-steps"></div>
+
+    <div class="cmd-footer">
+      <button class="cmd-btn-cancel" onclick="closeCmdModal()">Batal</button>
+      <button class="cmd-btn-done" onclick="confirmDone()">✅ Tandai Selesai & Kirim Notif</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bukti Lightbox -->
+<div class="bukti-lightbox" id="bukti-lightbox" onclick="closeAdminLightbox()">
+  <button class="bukti-lb-close" onclick="closeAdminLightbox()">×</button>
+  <div class="bukti-lb-box" onclick="event.stopPropagation()">
+    <div class="bukti-lb-head">
+      <div>
+        <div class="bukti-lb-title" id="bukti-lb-title">Bukti Transfer</div>
+        <div class="bukti-lb-sub" id="bukti-lb-sub"></div>
+      </div>
+      <a class="bukti-lb-download" id="bukti-lb-download" download="bukti-transfer.jpg">⬇ Download</a>
+    </div>
+    <img class="bukti-lb-img" id="bukti-lb-img" src="" alt="bukti transfer"/>
+  </div>
+</div>
+
+<!-- Sending overlay -->
+<div class="sending-overlay" id="sending-overlay">
+  <div class="sending-box">
+    <div class="sending-spinner"></div>
+    <div class="sending-text" id="sending-text">Mengirim notifikasi...</div>
+    <div class="sending-sub" id="sending-sub">Mohon tunggu sebentar</div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════
+const ADMIN_PW      = 'hyrise2025';   // ← Ganti password di sini
+const STORAGE_KEY   = 'hyrise_orders';
+const CONFIG_KEY    = 'hyrise_admin_cfg';
+const LOG_KEY       = 'hyrise_notif_log';
+const SESSION_KEY   = 'hyrise_admin_session';
+
+// ── LOGIN ──────────────────────────────────────
+function doLogin() {
+  const pw = document.getElementById('pw-input').value;
+  if (pw === ADMIN_PW) {
+    sessionStorage.setItem(SESSION_KEY, '1');
+    document.getElementById('login-wrap').style.display = 'none';
+    document.getElementById('admin-wrap').classList.add('show');
+    initAdmin();
+  } else {
+    document.getElementById('login-err').textContent = '❌ Password salah!';
+    document.getElementById('pw-input').value = '';
+  }
+}
+function doLogout() {
+  sessionStorage.removeItem(SESSION_KEY);
+  location.reload();
+}
+if (sessionStorage.getItem(SESSION_KEY)) {
+  document.getElementById('login-wrap').style.display = 'none';
+  document.getElementById('admin-wrap').classList.add('show');
+}
+
+// ── CLOCK ──────────────────────────────────────
+function tickClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('id-ID');
+}
+setInterval(tickClock, 1000); tickClock();
+
+// ── CONFIG ────────────────────────────────────
+function loadConfig() {
+  try { return JSON.parse(localStorage.getItem(CONFIG_KEY)) || {}; } catch { return {}; }
+}
+function saveConfig() {
+  const cfg = {
+    emailjsKey:      document.getElementById('cfg-emailjs-key').value.trim(),
+    emailjsService:  document.getElementById('cfg-emailjs-service').value.trim(),
+    emailjsTemplate: document.getElementById('cfg-emailjs-template').value.trim(),
+    fonnteToken:     document.getElementById('cfg-fonnte-token').value.trim(),
+    serverName:      document.getElementById('cfg-server-name').value.trim() || 'Hyrise SMP',
+    discord:         document.getElementById('cfg-discord').value.trim() || 'https://discord.gg/hyrisesmp',
+    serverIp:        document.getElementById('cfg-server-ip').value.trim() || 'furina.nexuscloud.id:25520',
+    pteroUrl:        document.getElementById('cfg-ptero-url').value.trim().replace(/\/$/, ''),
+    pteroKey:        document.getElementById('cfg-ptero-key').value.trim(),
+    pteroServer:     document.getElementById('cfg-ptero-server').value.trim(),
+  };
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
+  if (cfg.emailjsKey) emailjs.init(cfg.emailjsKey);
+  document.getElementById('setup-status').textContent = '✅ Konfigurasi tersimpan!';
+  setTimeout(() => document.getElementById('setup-status').textContent = '', 3000);
+  showToast('✅ Config disimpan', 'ok');
+}
+function fillConfigForm() {
+  const cfg = loadConfig();
+  document.getElementById('cfg-emailjs-key').value      = cfg.emailjsKey      || '';
+  document.getElementById('cfg-emailjs-service').value  = cfg.emailjsService  || '';
+  document.getElementById('cfg-emailjs-template').value = cfg.emailjsTemplate || '';
+  document.getElementById('cfg-fonnte-token').value     = cfg.fonnteToken     || '';
+  document.getElementById('cfg-server-name').value      = cfg.serverName      || '';
+  document.getElementById('cfg-discord').value          = cfg.discord         || '';
+  document.getElementById('cfg-server-ip').value        = cfg.serverIp        || '';
+  document.getElementById('cfg-ptero-url').value        = cfg.pteroUrl        || '';
+  document.getElementById('cfg-ptero-key').value        = cfg.pteroKey        || '';
+  document.getElementById('cfg-ptero-server').value     = cfg.pteroServer     || '';
+  if (cfg.emailjsKey) emailjs.init(cfg.emailjsKey);
+}
+
+// ── ORDERS (Supabase) ─────────────────────────
+let _ordersCache = [];
+
+async function loadOrders() {
+  try {
+    const { data, error } = await supa.from('orders').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    _ordersCache = (data || []).map(r => ({
+      id:        r.order_id,
+      item:      r.item,
+      price:     r.price,
+      icon:      r.icon,
+      username:  r.username,
+      contact:   r.contact,
+      note:      r.note,
+      bukti:     r.bukti,
+      buktiAt:   r.bukti_at,
+      status:    r.status,
+      createdAt: r.created_at,
+      doneAt:    r.done_at,
+      notifWA:   r.notif_wa,
+      notifEmail:r.notif_email,
+      _dbId:     r.id,
+    }));
+    return _ordersCache;
+  } catch(e) {
+    console.warn('loadOrders error:', e);
+    return _ordersCache;
+  }
+}
+
+async function saveOrders(orders) {
+  // Tidak dipakai langsung — update dilakukan per-record dengan updateOrder
+}
+
+async function updateOrder(dbId, fields) {
+  if (!dbId) return;
+  // Map camelCase ke snake_case
+  const mapped = {};
+  if ('status'     in fields) mapped.status      = fields.status;
+  if ('doneAt'     in fields) mapped.done_at      = fields.doneAt;
+  if ('notifWA'    in fields) mapped.notif_wa     = fields.notifWA;
+  if ('notifEmail' in fields) mapped.notif_email  = fields.notifEmail;
+  if ('bukti'      in fields) mapped.bukti        = fields.bukti;
+  if ('bukti_at'   in fields) mapped.bukti_at     = fields['bukti_at'];
+  await supa.from('orders').update(mapped).eq('id', dbId);
+}
+
+let currentFilter = 'all';
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderTable();
+}
+
+async function renderStats() {
+  const orders = await loadOrders();
+  const pending = orders.filter(o => o.status === 'pending').length;
+  const done    = orders.filter(o => o.status === 'done').length;
+  let rev = 0;
+  orders.filter(o => o.status === 'done').forEach(o => {
+    const m = o.price.replace(/[^\d]/g, '');
+    if (m) rev += parseInt(m);
+  });
+  document.getElementById('s-total').textContent   = orders.length;
+  document.getElementById('s-pending').textContent = pending;
+  document.getElementById('s-done').textContent    = done;
+  document.getElementById('s-rev').textContent     = rev > 0 ? 'Rp ' + rev.toLocaleString('id-ID') : 'Rp 0';
+  const withBukti = orders.filter(o => o.bukti).length;
+  const buktiEl = document.getElementById('s-bukti');
+  if (buktiEl) buktiEl.textContent = withBukti;
+}
+
+function formatDate(iso) {
+  if (!iso) return '-';
+  const d = new Date(iso);
+  return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short'}) + ' ' +
+         d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+}
+
+async function renderTable() {
+  await loadOrders(); // refresh dari Supabase
+  const orders = _ordersCache;
+  const q = (document.getElementById('search-input').value || '').toLowerCase();
+  const filtered = orders.filter(o => {
+    if (currentFilter !== 'all' && o.status !== currentFilter) return false;
+    if (q && !o.username.toLowerCase().includes(q) && !o.item.toLowerCase().includes(q) && !o.id.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  const body = document.getElementById('order-table-body');
+  if (filtered.length === 0) {
+    body.innerHTML = `<div class="empty-table"><div class="empty-table-icon">📭</div><div>Tidak ada pesanan ditemukan</div></div>`;
+    return;
+  }
+
+  body.innerHTML = filtered.map((o, fi) => {
+    // find real index in full orders array
+    const realIdx = orders.findIndex(x => x.id === o.id);
+    const badgeCls = o.status === 'done' ? 'badge-done' : o.status === 'paid' ? 'badge-paid' : 'badge-pending';
+    const badgeTxt = o.status === 'done' ? '✅ Selesai' : o.status === 'paid' ? '💳 Sudah Bayar' : '⏳ Menunggu';
+    const isDone   = o.status === 'done';
+    const hasContact = o.contact && o.contact.trim();
+    const buktiBtn = o.bukti
+      ? `<button class="act-btn" style="background:rgba(87,201,106,0.12);color:var(--accent);border:1px solid rgba(87,201,106,0.3)" onclick="adminViewBukti(${realIdx})"><i class="ti ti-photo"></i> Lihat Bukti ✅</button>`
+      : `<button class="act-btn" style="background:rgba(240,165,0,0.08);color:var(--accent2);border:1px solid rgba(240,165,0,0.2)" disabled><i class="ti ti-photo-off"></i> Belum Ada Bukti</button>`;
+    return `
+    <div class="t-row ${isDone ? 'paid-row' : ''}">
+      <div class="t-cell t-id">${o.id}<br><span style="font-size:10px;color:var(--muted)">${formatDate(o.createdAt)}</span><span class="badge ${badgeCls}" style="margin-left:auto">${badgeTxt}</span></div>
+      <div class="t-cell t-item">${o.icon || '🛒'} ${o.item}<small>👤 ${o.username}${o.note ? ' · '+o.note : ''}</small></div>
+      <div class="t-cell t-contact">
+        ${hasContact
+          ? (isWA(o.contact)
+              ? `<span>📱 ${o.contact}</span>`
+              : `<span>✉ ${o.contact}</span>`)
+          : '<span style="color:var(--muted);font-size:11px">— Tidak ada kontak —</span>'}
+      </div>
+      <div class="t-cell t-price">${o.price}</div>
+      <div class="t-cell"><span class="badge ${badgeCls}">${badgeTxt}</span></div>
+      <div class="t-cell action-cell">
+        ${buktiBtn}
+        <button class="act-btn act-done" onclick="markDoneAndNotify(${realIdx})" ${isDone ? 'disabled' : ''}>
+          ${isDone ? '✅ Selesai' : '<i class="ti ti-send"></i> Selesai & Kirim Notif'}
+        </button>
+        <button class="act-btn act-del" onclick="deleteOrder(${realIdx})">
+          <i class="ti ti-trash"></i> Hapus
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function renderAll() {
+  await renderStats();
+  await renderTable();
+}
+
+function isWA(contact) {
+  // heuristic: mostly digits / starts with 08 / +62
+  return /^[\d\s\+\-\(\)]{8,}$/.test(contact.replace(/\s/g,''));
+}
+
+async function deleteOrder(idx) {
+  if (!confirm('Hapus pesanan ini?')) return;
+  const orders = _ordersCache;
+  if (!orders[idx]) return;
+  const dbId = orders[idx]._dbId;
+  await supa.from('orders').delete().eq('id', dbId);
+  orders.splice(idx, 1);
+  await renderAll();
+  showToast('🗑 Pesanan dihapus', 'info');
+}
+
+// ── PTERODACTYL COMMAND MAPPING ───────────────
+function getMinecraftCommands(order) {
+  const item = order.item.toLowerCase();
+  const user = order.username;
+  const cmds = [];
+
+  // RANKS
+  if      (item.includes('god'))    cmds.push(`lp user ${user} parent set god`);
+  else if (item.includes('legend')) cmds.push(`lp user ${user} parent set legend`);
+  else if (item.includes('mvp'))    cmds.push(`lp user ${user} parent set mvp`);
+  else if (item.includes('vip'))    cmds.push(`lp user ${user} parent set vip`);
+
+  // KEYS
+  if (item.includes('bundle')) {
+    cmds.push(`crate key give ${user} hyrise 5`);
+    cmds.push(`crate key give ${user} hyrise 2`);
+  } else if (item.includes('key')) {
+    cmds.push(`crate key give ${user} hyrise 1`);
+  }
+
+  return cmds;
+}
+
+// ── COMMAND MODAL ─────────────────────────────
+let pendingOrderIdx = null;
+
+function markDoneAndNotify(idx) {
+  const orders = _ordersCache;
+  const o = orders[idx];
+  if (!o) return;
+  pendingOrderIdx = idx;
+
+  const cmds = getMinecraftCommands(o);
+  const cfg  = loadConfig();
+
+  // Update ptero link
+  const pteroUrl = cfg.pteroUrl || 'https://panel.nexuscloud.id';
+  document.getElementById('cmd-ptero-link').href = pteroUrl;
+  document.getElementById('cmd-ptero-link').textContent = '';
+  document.getElementById('cmd-ptero-link').innerHTML = `<i class="ti ti-external-link"></i> Buka Console Pterodactyl (${pteroUrl}) →`;
+
+  document.getElementById('cmd-title').textContent = `${o.icon || '🛒'} ${o.item}`;
+  document.getElementById('cmd-sub').textContent   = `Untuk: ${o.username} · ${o.price}`;
+
+  // Build steps
+  const stepsEl = document.getElementById('cmd-steps');
+  if (cmds.length === 0) {
+    stepsEl.innerHTML = `<div class="cmd-step"><div style="font-size:13px;color:var(--muted)">⚠ Tidak ada command otomatis untuk item ini. Proses manual jika perlu.</div></div>`;
+  } else {
+    stepsEl.innerHTML = cmds.map((cmd, i) => `
+      <div class="cmd-step">
+        <div class="cmd-step-label">Command ${cmds.length > 1 ? (i+1) + ' dari ' + cmds.length : ''} <span>Klik copy → paste di console</span></div>
+        <div class="cmd-code" id="cmd-code-${i}">${cmd}</div>
+        <button class="cmd-copy-btn" id="cmd-copybtn-${i}" onclick="copyCmd(${i}, '${cmd.replace(/'/g,"\\'")}')">
+          <i class="ti ti-copy"></i> Copy Command
+        </button>
+      </div>
+      ${i < cmds.length - 1 ? '<div class="cmd-divider">lalu</div>' : ''}`
+    ).join('');
+  }
+
+  document.getElementById('cmd-overlay').classList.add('open');
+}
+
+function copyCmd(i, cmd) {
+  navigator.clipboard.writeText(cmd).then(() => {
+    const btn = document.getElementById(`cmd-copybtn-${i}`);
+    btn.innerHTML = '<i class="ti ti-check"></i> Tersalin!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = '<i class="ti ti-copy"></i> Copy Command';
+      btn.classList.remove('copied');
+    }, 2000);
+  }).catch(() => {
+    // fallback: select text
+    const el = document.getElementById(`cmd-code-${i}`);
+    const range = document.createRange();
+    range.selectNode(el);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+  });
+}
+
+function closeCmdModal() {
+  document.getElementById('cmd-overlay').classList.remove('open');
+  pendingOrderIdx = null;
+}
+
+async function confirmDone() {
+  if (pendingOrderIdx === null) return;
+  const idx    = pendingOrderIdx;
+  const orders = _ordersCache;
+  const o      = orders[idx];
+  if (!o) return;
+
+  document.getElementById('cmd-overlay').classList.remove('open');
+
+  const cfg = loadConfig();
+  showSending('Mengirim notifikasi...', 'Menghubungi customer via WA / Email');
+
+  const results = { wa: null, email: null };
+  const hasContact = o.contact && o.contact.trim();
+
+  if (hasContact) {
+    const isWhatsApp = isWA(o.contact);
+    const isEmail    = o.contact.includes('@');
+    if (isWhatsApp && cfg.fonnteToken)
+      results.wa = await sendWA(o, cfg);
+    if (isEmail && cfg.emailjsKey && cfg.emailjsService && cfg.emailjsTemplate)
+      results.email = await sendEmail(o, cfg);
+  }
+
+  hideSending();
+
+  const dbId = o._dbId;
+  const doneAt = new Date().toISOString();
+  await updateOrder(dbId, {
+    status: 'done',
+    doneAt,
+    notifWA:    results.wa,
+    notifEmail: results.email,
+  });
+  orders[idx].status     = 'done';
+  orders[idx].doneAt     = doneAt;
+  orders[idx].notifWA    = results.wa;
+  orders[idx].notifEmail = results.email;
+
+  await renderAll();
+  pendingOrderIdx = null;
+
+  // Log
+  const cmds = getMinecraftCommands(o);
+  if (cmds.length > 0) addLog('info', `[${o.id}] 📋 Command di-copy manual: ${cmds.join(' | ')}`);
+  if (results.wa === true)          addLog('ok',   `[${o.id}] ✅ WA terkirim ke ${o.contact}`);
+  else if (results.wa === false)    addLog('fail', `[${o.id}] ❌ WA gagal ke ${o.contact}`);
+  if (results.email === true)       addLog('ok',   `[${o.id}] ✅ Email terkirim ke ${o.contact}`);
+  else if (results.email === false) addLog('fail', `[${o.id}] ❌ Email gagal ke ${o.contact}`);
+  if (!hasContact)                  addLog('info', `[${o.id}] Tidak ada kontak — notifikasi tidak dikirim`);
+
+  const notifOk = results.wa === true || results.email === true;
+  showToast(notifOk ? '✅ Selesai + Notifikasi terkirim!' : '✅ Ditandai selesai', notifOk ? 'ok' : 'info');
+}
+
+// ── TEST PTERODACTYL (tetap ada untuk referensi URL) ──
+async function testPtero() {
+  const url = document.getElementById('cfg-ptero-url').value.trim().replace(/\/$/, '');
+  if (!url) { showToast('⚠ Isi URL panel dulu', 'err'); return; }
+  // Just open the panel
+  window.open(url, '_blank');
+}
+
+// ── SEND WA via Fonnte ────────────────────────
+async function sendWA(order, cfg) {
+  try {
+    // Normalize phone: remove non-digit, ensure starts with 62
+    let phone = order.contact.replace(/[^\d]/g, '');
+    if (phone.startsWith('0')) phone = '62' + phone.slice(1);
+    if (!phone.startsWith('62')) phone = '62' + phone;
+
+    const server  = cfg.serverName || 'Hyrise SMP';
+    const discord = cfg.discord    || 'https://discord.gg/hyrisesmp';
+    const msg =
+`✅ *Pesanan Kamu Sudah Selesai!*
+
+Halo *${order.username}*! 👋
+
+Pesananmu di *${server}* telah diproses:
+
+🛒 *Item:* ${order.item}
+💰 *Harga:* ${order.price}
+🆔 *ID Pesanan:* \`${order.id}\`
+
+Rank/Key kamu sudah aktif di server. Silakan cek in-game sekarang!
+
+Jika ada masalah, hubungi kami di Discord:
+${discord}
+
+_Terima kasih sudah support ${server}!_ 🙏`;
+
+    const res = await fetch('https://api.fonnte.com/send', {
+      method: 'POST',
+      headers: { 'Authorization': cfg.fonnteToken, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ target: phone, message: msg, countryCode: '62' })
+    });
+    const data = await res.json();
+    return data.status === true || data.status === 'true';
+  } catch(e) {
+    console.error('WA error:', e);
+    return false;
+  }
+}
+
+// ── SEND EMAIL via EmailJS ────────────────────
+async function sendEmail(order, cfg) {
+  try {
+    const server  = cfg.serverName || 'Hyrise SMP';
+    const discord = cfg.discord    || 'https://discord.gg/ZWKdJCcQNu';
+    const params  = {
+      to_email:    order.contact,
+      to_name:     order.username,
+      order_id:    order.id,
+      mc_username: order.username,
+      item_list:   order.item,
+      total:       order.price,
+      payment:     order.payment || '-',
+      date:        new Date().toLocaleString('id-ID'),
+      server_name: server,
+      server_ip:   cfg.serverIp || 'furina.nexuscloud.id:25520',
+      discord_url: discord,
+    };
+    const res = await emailjs.send(cfg.emailjsService, cfg.emailjsTemplate, params);
+    return res.status === 200;
+  } catch(e) {
+    console.error('Email error:', e);
+    return false;
+  }
+}
+
+// ── SENDING UI ────────────────────────────────
+function showSending(txt, sub) {
+  document.getElementById('sending-text').textContent = txt;
+  document.getElementById('sending-sub').textContent  = sub;
+  document.getElementById('sending-overlay').classList.add('show');
+}
+function hideSending() {
+  document.getElementById('sending-overlay').classList.remove('show');
+}
+
+// ── LOG ───────────────────────────────────────
+function loadLog() { try { return JSON.parse(localStorage.getItem(LOG_KEY)) || []; } catch { return []; } }
+function addLog(type, msg) {
+  const logs = loadLog();
+  logs.unshift({ type, msg, time: new Date().toLocaleTimeString('id-ID') });
+  if (logs.length > 80) logs.pop();
+  localStorage.setItem(LOG_KEY, JSON.stringify(logs));
+  renderLog();
+}
+function renderLog() {
+  const logs = loadLog();
+  const el   = document.getElementById('log-list');
+  if (!logs.length) { el.innerHTML = '<div style="padding:14px 20px;font-size:12px;color:var(--muted)">Belum ada aktivitas notifikasi.</div>'; return; }
+  el.innerHTML = logs.map(l =>
+    `<div class="log-item">
+      <span class="log-time">${l.time}</span>
+      <span class="log-msg log-${l.type}">${l.msg}</span>
+    </div>`).join('');
+}
+function clearLog() {
+  localStorage.removeItem(LOG_KEY);
+  renderLog();
+}
+
+// ── TOAST ─────────────────────────────────────
+let toastT;
+function showToast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type + ' show';
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+// ── BUKTI TRANSFER VIEWER ─────────────────────
+function adminViewBukti(idx) {
+  const o = _ordersCache[idx];
+  if (!o || !o.bukti) { showToast('⚠ Bukti tidak ditemukan', 'err'); return; }
+  document.getElementById('bukti-lb-img').src       = o.bukti;
+  document.getElementById('bukti-lb-download').href = o.bukti;
+  document.getElementById('bukti-lb-download').download = 'bukti-' + o.id + '.jpg';
+  document.getElementById('bukti-lb-title').textContent = '📎 Bukti Transfer — ' + o.id;
+  document.getElementById('bukti-lb-sub').textContent   = '👤 ' + o.username + ' · ' + o.item + ' · ' + o.price + (o.buktiAt ? ' · ' + formatDate(o.buktiAt) : '');
+  document.getElementById('bukti-lightbox').classList.add('open');
+}
+function closeAdminLightbox() {
+  document.getElementById('bukti-lightbox').classList.remove('open');
+}
+
+// ── MC COMMAND CONSOLE ────────────────────────
+function mcLog(text, type='info') {
+  const out = document.getElementById('mc-output');
+  const line = document.createElement('div');
+  line.className = 'mc-output-line mc-line-' + type;
+  const ts = new Date().toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  line.textContent = '[' + ts + '] ' + text;
+  out.appendChild(line);
+  out.scrollTop = out.scrollHeight;
+}
+
+async function sendMcCmd() {
+  const input = document.getElementById('mc-cmd-input');
+  const cmd = input.value.trim();
+  if (!cmd) { input.focus(); return; }
+
+  const cfg = loadConfig();
+  if (!cfg.pteroUrl || !cfg.pteroKey || !cfg.pteroServer) {
+    mcLog('⚠ Konfigurasi Pterodactyl belum lengkap. Isi Setup di atas dulu!', 'err');
+    showToast('⚠ Config Pterodactyl belum diisi', 'err');
+    return;
+  }
+
+  mcLog('> ' + cmd, 'cmd');
+  input.value = '';
+  input.focus();
+
+  const endpoint = cfg.pteroUrl.replace(/\/$/, '') + '/api/client/servers/' + cfg.pteroServer + '/command';
+  const body     = JSON.stringify({ command: cmd });
+  const headers  = {
+    'Authorization': 'Bearer ' + cfg.pteroKey,
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  };
+
+  // ── Coba langsung dulu ──────────────────────
+  let sent = false;
+  try {
+    const res = await fetch(endpoint, { method: 'POST', headers, body });
+    if (res.status === 204 || res.ok) {
+      mcLog('✅ Command terkirim langsung ke server.', 'ok');
+      addLog('info', '⚡ MC Command: ' + cmd);
+      sent = true;
+    } else {
+      const txt = await res.text().catch(() => '');
+      mcLog('⚠ Server balas ' + res.status + (txt ? ': ' + txt.slice(0,120) : ''), 'err');
+    }
+  } catch(e) {
+    // CORS atau network error — coba via proxy
+    mcLog('⚠ Direct fetch diblokir (CORS). Mencoba via proxy...', 'info');
+  }
+
+  // ── Fallback: CORS proxy (corsproxy.io) ─────
+  if (!sent) {
+    try {
+      const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(endpoint);
+      const res2 = await fetch(proxyUrl, { method: 'POST', headers, body });
+      if (res2.status === 204 || res2.ok) {
+        mcLog('✅ Command terkirim via proxy.', 'ok');
+        addLog('info', '⚡ MC Command (proxy): ' + cmd);
+        sent = true;
+      } else {
+        const txt = await res2.text().catch(() => '');
+        mcLog('❌ Proxy error ' + res2.status + (txt ? ': ' + txt.slice(0,120) : ''), 'err');
+      }
+    } catch(e2) {
+      mcLog('❌ Proxy juga gagal: ' + e2.message, 'err');
+    }
+  }
+
+  // ── Fallback terakhir: copy + buka Pterodactyl ──
+  if (!sent) {
+    mcLog('💡 Solusi manual: command sudah di-copy ke clipboard. Buka Pterodactyl dan paste di console-nya.', 'send');
+    try { await navigator.clipboard.writeText(cmd); } catch(_) {}
+    showMcManualBanner(cmd, cfg.pteroUrl);
+    addLog('info', '📋 MC Command (manual copy): ' + cmd);
+  }
+}
+
+function showMcManualBanner(cmd, pteroUrl) {
+  let banner = document.getElementById('mc-manual-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'mc-manual-banner';
+    banner.style.cssText = 'margin-top:10px;background:rgba(122,162,247,0.08);border:1px solid rgba(122,162,247,0.3);border-radius:9px;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;';
+    document.querySelector('.mc-console-body').appendChild(banner);
+  }
+  banner.innerHTML = `
+    <span style="font-size:12px;color:#7aa2f7;flex:1;min-width:160px">
+      <i class="ti ti-clipboard-check"></i> Command sudah ter-copy!
+      Paste di console Pterodactyl.
+    </span>
+    <button onclick="navigator.clipboard.writeText(document.getElementById('mc-cmd-input').dataset.last||'').catch(()=>{})" style="background:rgba(122,162,247,0.15);border:1px solid rgba(122,162,247,0.4);color:#7aa2f7;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Exo 2',sans-serif">
+      <i class="ti ti-copy"></i> Copy ulang
+    </button>
+    <a href="${pteroUrl || '#'}" target="_blank" style="background:#7aa2f7;color:#0a0e14;border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:5px">
+      <i class="ti ti-external-link"></i> Buka Pterodactyl
+    </a>`;
+  // store last cmd for copy ulang
+  document.getElementById('mc-cmd-input').dataset.last = cmd;
+}
+
+function setMcCmd(cmd) {
+  const input = document.getElementById('mc-cmd-input');
+  input.value = cmd;
+  input.focus();
+  input.selectionStart = input.selectionEnd = cmd.length;
+}
+
+function clearMcOutput() {
+  document.getElementById('mc-output').innerHTML = '<div class="mc-output-line mc-line-info">[ Output dibersihkan. ]</div>';
+}
+
+// ── INIT ──────────────────────────────────────
+function initAdmin() {
+  fillConfigForm();
+  renderAll();
+  renderLog();
+  // auto-refresh every 15s to pick up new orders from main site
+  setInterval(renderAll, 15000);
+}
+if (sessionStorage.getItem(SESSION_KEY)) initAdmin();
+</script>
+</body>
+</html>
